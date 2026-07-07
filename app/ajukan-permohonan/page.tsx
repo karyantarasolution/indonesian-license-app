@@ -269,11 +269,7 @@ export default function AjukanPermohonanPage() {
         : formData.namaPerusahaan;
       
       // Jenis Izin
-      // Untuk perorangan: formData.jenisUsaha
-      // Untuk perusahaan: formData.keteranganPemanfaatanBangunan
-      const jenisIzin = formData.jenisPemohon === "perorangan"
-        ? formData.jenisUsaha
-        : formData.keteranganPemanfaatanBangunan;
+      const jenisIzin = formData.jenisIzin;
 
       // Alamat untuk disimpan di field alamat terpisah
       const alamat = formData.jenisPemohon === "perorangan"
@@ -449,6 +445,30 @@ export default function AjukanPermohonanPage() {
     if (type === "Izin Gangguan (HO)") {
       fields.push({ label: "Jenis Gangguan", key: "jenisGangguan", type: "text", required: true });
       fields.push({ label: "Jarak ke Pemukiman (meter)", key: "jarakPemukiman", type: "text", required: false });
+    }
+    if (type === "Izin Usaha Kesehatan") {
+      fields.push({ label: "Jenis Fasilitas Kesehatan", key: "jenisFasilitasKesehatan", type: "select", required: true, options: ["Klinik", "Rumah Sakit", "Puskesmas", "Laboratorium Kesehatan", "Apotek", "Praktik Mandiri"] });
+      fields.push({ label: "Nomor STR Tenaga Kesehatan", key: "nomorSTR", type: "text", required: true });
+      fields.push({ label: "Alamat Lokasi Praktik", key: "alamatLokasiPraktik", type: "textarea", required: true });
+    }
+    if (type === "Izin Usaha Pariwisata") {
+      fields.push({ label: "Jenis Usaha Pariwisata", key: "jenisUsahaPariwisata", type: "select", required: true, options: ["Hotel", "Restoran", "Biro Perjalanan Wisata", "Tempat Hiburan", "Objek Wisata"] });
+      fields.push({ label: "Kapasitas", key: "kapasitas", type: "text", required: true });
+    }
+    if (type === "Izin Usaha Pendidikan") {
+      fields.push({ label: "Jenis Lembaga Pendidikan", key: "jenisLembagaPendidikan", type: "select", required: true, options: ["Formal", "Non-Formal", "Kursus Pelatihan", "Bimbingan Belajar", "Pendidikan Anak Usia Dini"] });
+      fields.push({ label: "Akreditasi", key: "akreditasi", type: "text", required: false });
+    }
+    if (type === "Izin Usaha Pertanian") {
+      fields.push({ label: "Jenis Komoditas", key: "jenisKomoditas", type: "text", required: true });
+      fields.push({ label: "Luas Lahan (m²)", key: "luasLahan", type: "text", required: true });
+    }
+    if (type === "Izin Usaha Perikanan") {
+      fields.push({ label: "Jenis Budidaya", key: "jenisBudidaya", type: "text", required: true });
+      fields.push({ label: "Lokasi Perairan", key: "lokasiPerairan", type: "textarea", required: true });
+    }
+    if (type === "Lainnya") {
+      fields.push({ label: "Keterangan", key: "keteranganLainnya", type: "textarea", required: true });
     }
 
     return fields;
@@ -799,10 +819,10 @@ export default function AjukanPermohonanPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="jenisUsaha">Jenis Izin *</Label>
+                      <Label htmlFor="jenisIzin">Jenis Izin *</Label>
                       <Select
-                        value={formData.jenisUsaha}
-                        onValueChange={(value) => setFormData({ ...formData, jenisUsaha: value })}
+                        value={formData.jenisIzin}
+                        onValueChange={(value) => setFormData({ ...formData, jenisIzin: value })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih jenis izin" />
