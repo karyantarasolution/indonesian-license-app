@@ -214,23 +214,29 @@ export default function AjukanPermohonanPage() {
       }
     };
 
-    // Upload file perorangan
+    // Upload dokumen identitas berdasarkan jenis pemohon
     if (formData.jenisPemohon === "perorangan") {
       await addFile(ktpFile, "KTP");
       await addFile(npwpPribadiFile, "NPWP Pribadi");
       await addFile(kkFile, "Kartu Keluarga");
-      await addFile(suratPernyataanFile, "Surat Pernyataan");
-      await addFile(skduFile, "SKDU");
-      await addFiles(fotoLokasiUsahaFile, "Foto Lokasi Usaha");
-      await addFile(denahLokasiUsahaFile, "Denah Lokasi Usaha");
-      await addFile(suratKuasaPemohonFile, "Surat Kuasa Pemohon");
     } else {
-      // Upload file perusahaan
       await addFile(aktaPendirianFile, "Akta Pendirian");
       await addFile(nibFile, "NIB");
       await addFile(npwpPerusahaanFile, "NPWP Perusahaan");
       await addFile(ktpDirekturFile, "KTP Direktur");
       await addFile(suratKuasaFile, "Surat Kuasa");
+    }
+
+    // Upload surat pernyataan (wajib semua jenis izin)
+    await addFile(suratPernyataanFile, "Surat Pernyataan");
+
+    // Upload dokumen persyaratan berdasarkan jenis izin
+    if (isUsahaIzin()) {
+      await addFile(skduFile, "SKDU");
+      await addFiles(fotoLokasiUsahaFile, "Foto Lokasi Usaha");
+      await addFile(denahLokasiUsahaFile, "Denah Lokasi Usaha");
+      await addFile(suratKuasaPemohonFile, "Surat Kuasa Pemohon");
+    } else if (isBangunanIzin()) {
       await addFile(sertifikatTanahFile, "Sertifikat Tanah");
       await addFile(suratSewaFile, "Surat Sewa");
       await addFile(suratKeteranganTidakSengketaFile, "Surat Keterangan Tidak Sengketa");
@@ -425,26 +431,14 @@ export default function AjukanPermohonanPage() {
     const type = formData.jenisIzin;
     const fields: Array<{ label: string; key: string; type: "text" | "select" | "textarea"; required: boolean; options?: string[] }> = [];
 
-    if (type === "Izin Usaha Perdagangan" || type === "Izin Usaha Jasa" || type === "Izin Usaha Industri") {
+    if (["Izin Usaha Perdagangan", "Izin Usaha Pariwisata", "Izin Usaha Kesehatan", "Izin Usaha Pendidikan", "Izin Usaha Pertanian", "Izin Usaha Perikanan"].includes(type)) {
       fields.push({ label: "Jenis Usaha", key: "jenisUsaha", type: "text", required: true });
       fields.push({ label: "Lokasi Usaha", key: "lokasiKegiatanUsaha", type: "textarea", required: true });
     }
-    if (type === "Izin Mendirikan Bangunan (IMB)" || type === "Izin Bangunan Gedung (PBG)") {
+    if (type === "Izin Mendirikan Bangunan (IMB)") {
       fields.push({ label: "Luas Bangunan (m²)", key: "luasBangunan", type: "text", required: true });
       fields.push({ label: "Fungsi Bangunan", key: "keteranganPemanfaatanBangunan", type: "text", required: true });
       fields.push({ label: "Jumlah Lantai", key: "jumlahLantai", type: "text", required: false });
-    }
-    if (type === "Izin Lingkungan" || type === "UKL-UPL" || type === "AMDAL") {
-      fields.push({ label: "Jenis Kegiatan", key: "jenisKegiatan", type: "text", required: true });
-      fields.push({ label: "Dampak Lingkungan", key: "dampakLingkungan", type: "textarea", required: true });
-    }
-    if (type === "Izin Trayek" || type === "Izin Angkutan") {
-      fields.push({ label: "Rute Trayek", key: "ruteTrayek", type: "text", required: true });
-      fields.push({ label: "Jumlah Kendaraan", key: "jumlahKendaraan", type: "text", required: true });
-    }
-    if (type === "Izin Gangguan (HO)") {
-      fields.push({ label: "Jenis Gangguan", key: "jenisGangguan", type: "text", required: true });
-      fields.push({ label: "Jarak ke Pemukiman (meter)", key: "jarakPemukiman", type: "text", required: false });
     }
     if (type === "Izin Usaha Kesehatan") {
       fields.push({ label: "Jenis Fasilitas Kesehatan", key: "jenisFasilitasKesehatan", type: "select", required: true, options: ["Klinik", "Rumah Sakit", "Puskesmas", "Laboratorium Kesehatan", "Apotek", "Praktik Mandiri"] });
@@ -467,14 +461,16 @@ export default function AjukanPermohonanPage() {
       fields.push({ label: "Jenis Budidaya", key: "jenisBudidaya", type: "text", required: true });
       fields.push({ label: "Lokasi Perairan", key: "lokasiPerairan", type: "textarea", required: true });
     }
-    if (type === "Lainnya") {
-      fields.push({ label: "Keterangan", key: "keteranganLainnya", type: "textarea", required: true });
-    }
 
     return fields;
   };
 
   const dynamicFields = getDynamicFields();
+
+  const izinUsaha = ["Izin Usaha Perdagangan", "Izin Usaha Pariwisata", "Izin Usaha Kesehatan", "Izin Usaha Pendidikan", "Izin Usaha Pertanian", "Izin Usaha Perikanan"];
+
+  const isUsahaIzin = () => izinUsaha.includes(formData.jenisIzin);
+  const isBangunanIzin = () => formData.jenisIzin === "Izin Mendirikan Bangunan (IMB)";
 
   const steps = [
     { number: 1, title: "Formulir Permohonan" },
@@ -829,20 +825,12 @@ export default function AjukanPermohonanPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Izin Usaha Perdagangan">Izin Usaha Perdagangan</SelectItem>
-                          <SelectItem value="Izin Usaha Jasa">Izin Usaha Jasa</SelectItem>
-                          <SelectItem value="Izin Usaha Industri">Izin Usaha Industri</SelectItem>
-                          <SelectItem value="Izin Mendirikan Bangunan (IMB)">Izin Mendirikan Bangunan (IMB)</SelectItem>
-                          <SelectItem value="Izin Bangunan Gedung (PBG)">Izin Bangunan Gedung (PBG)</SelectItem>
-                          <SelectItem value="Izin Lingkungan">Izin Lingkungan</SelectItem>
-                          <SelectItem value="Izin Gangguan (HO)">Izin Gangguan (HO)</SelectItem>
-                          <SelectItem value="Izin Trayek">Izin Trayek</SelectItem>
-                          <SelectItem value="Izin Angkutan">Izin Angkutan</SelectItem>
                           <SelectItem value="Izin Usaha Pariwisata">Izin Usaha Pariwisata</SelectItem>
                           <SelectItem value="Izin Usaha Kesehatan">Izin Usaha Kesehatan</SelectItem>
                           <SelectItem value="Izin Usaha Pendidikan">Izin Usaha Pendidikan</SelectItem>
                           <SelectItem value="Izin Usaha Pertanian">Izin Usaha Pertanian</SelectItem>
                           <SelectItem value="Izin Usaha Perikanan">Izin Usaha Perikanan</SelectItem>
-                          <SelectItem value="Lainnya">Lainnya</SelectItem>
+                          <SelectItem value="Izin Mendirikan Bangunan (IMB)">Izin Mendirikan Bangunan (IMB)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1138,18 +1126,12 @@ export default function AjukanPermohonanPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Izin Usaha Perdagangan">Izin Usaha Perdagangan</SelectItem>
-                          <SelectItem value="Izin Usaha Jasa">Izin Usaha Jasa</SelectItem>
-                          <SelectItem value="Izin Usaha Industri">Izin Usaha Industri</SelectItem>
-                          <SelectItem value="Izin Mendirikan Bangunan (IMB)">Izin Mendirikan Bangunan (IMB)</SelectItem>
-                          <SelectItem value="Izin Bangunan Gedung (PBG)">Izin Bangunan Gedung (PBG)</SelectItem>
-                          <SelectItem value="Izin Lingkungan">Izin Lingkungan</SelectItem>
-                          <SelectItem value="Izin Gangguan (HO)">Izin Gangguan (HO)</SelectItem>
-                          <SelectItem value="Izin Trayek">Izin Trayek</SelectItem>
-                          <SelectItem value="Izin Angkutan">Izin Angkutan</SelectItem>
                           <SelectItem value="Izin Usaha Pariwisata">Izin Usaha Pariwisata</SelectItem>
                           <SelectItem value="Izin Usaha Kesehatan">Izin Usaha Kesehatan</SelectItem>
                           <SelectItem value="Izin Usaha Pendidikan">Izin Usaha Pendidikan</SelectItem>
-                          <SelectItem value="Lainnya">Lainnya</SelectItem>
+                          <SelectItem value="Izin Usaha Pertanian">Izin Usaha Pertanian</SelectItem>
+                          <SelectItem value="Izin Usaha Perikanan">Izin Usaha Perikanan</SelectItem>
+                          <SelectItem value="Izin Mendirikan Bangunan (IMB)">Izin Mendirikan Bangunan (IMB)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1785,7 +1767,7 @@ export default function AjukanPermohonanPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                {formData.jenisPemohon === "perorangan" ? (
+                {isUsahaIzin() ? (
                   <div className="space-y-6">
                     {/* Form SKDU - Wajib */}
                     <div className="space-y-3">
@@ -2036,7 +2018,7 @@ export default function AjukanPermohonanPage() {
                       )}
                     </div>
                   </div>
-                ) : (
+                ) : isBangunanIzin() ? (
                   <div className="space-y-6">
                     {/* Dokumen Tanah */}
                     <div className="space-y-4 pt-4 border-t">
@@ -2423,7 +2405,7 @@ export default function AjukanPermohonanPage() {
                       </div>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 <div className="flex justify-between pt-4">
                   <Button type="button" variant="outline" onClick={prevStep}>
@@ -2434,8 +2416,8 @@ export default function AjukanPermohonanPage() {
                     type="submit"
                     disabled={
                       isSubmitting || 
-                      (formData.jenisPemohon === "perorangan" && (!skduFile || fotoLokasiUsahaFile.length < 2 || !denahLokasiUsahaFile)) ||
-                      (formData.jenisPemohon === "perusahaan" && (
+                      (isUsahaIzin() && (!skduFile || fotoLokasiUsahaFile.length < 2 || !denahLokasiUsahaFile)) ||
+                      (isBangunanIzin() && (
                         !sertifikatTanahFile || 
                         !suratKeteranganTidakSengketaFile || 
                         !denahBangunanFile || 
