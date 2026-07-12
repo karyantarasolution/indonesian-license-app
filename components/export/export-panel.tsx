@@ -268,10 +268,12 @@ export function ExportPanel({ data }: ExportPanelProps) {
                 <SelectContent>
                   <SelectItem value="all">Semua Sektor</SelectItem>
                   <SelectItem value="Perdagangan">Perdagangan</SelectItem>
-                  <SelectItem value="Lingkungan">Lingkungan</SelectItem>
-                  <SelectItem value="Konstruksi">Konstruksi</SelectItem>
-                  <SelectItem value="Industri">Industri</SelectItem>
                   <SelectItem value="Pariwisata">Pariwisata</SelectItem>
+                  <SelectItem value="Kesehatan">Kesehatan</SelectItem>
+                  <SelectItem value="Pendidikan">Pendidikan</SelectItem>
+                  <SelectItem value="Pertanian">Pertanian</SelectItem>
+                  <SelectItem value="Perikanan">Perikanan</SelectItem>
+                  <SelectItem value="Konstruksi">Konstruksi</SelectItem>
                 </SelectContent>
               </Select>
             </div>

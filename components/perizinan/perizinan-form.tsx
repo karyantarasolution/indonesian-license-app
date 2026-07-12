@@ -110,10 +110,13 @@ export function PerizinanForm({ onSubmit, initialData, onCancel }: PerizinanForm
                   <SelectValue placeholder="Pilih jenis izin" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Izin Usaha">Izin Usaha</SelectItem>
-                  <SelectItem value="Izin Lingkungan">Izin Lingkungan</SelectItem>
-                  <SelectItem value="Izin Bangunan">Izin Bangunan</SelectItem>
                   <SelectItem value="Izin Perdagangan">Izin Perdagangan</SelectItem>
+                  <SelectItem value="Izin Pariwisata">Izin Pariwisata</SelectItem>
+                  <SelectItem value="Izin Kesehatan">Izin Kesehatan</SelectItem>
+                  <SelectItem value="Izin Pendidikan">Izin Pendidikan</SelectItem>
+                  <SelectItem value="Izin Pertanian">Izin Pertanian</SelectItem>
+                  <SelectItem value="Izin Perikanan">Izin Perikanan</SelectItem>
+                  <SelectItem value="Izin Mendirikan Bangunan (IMB)">Izin Mendirikan Bangunan (IMB)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -227,10 +230,12 @@ export function PerizinanForm({ onSubmit, initialData, onCancel }: PerizinanForm
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Perdagangan">Perdagangan</SelectItem>
-                  <SelectItem value="Lingkungan">Lingkungan</SelectItem>
-                  <SelectItem value="Konstruksi">Konstruksi</SelectItem>
-                  <SelectItem value="Industri">Industri</SelectItem>
                   <SelectItem value="Pariwisata">Pariwisata</SelectItem>
+                  <SelectItem value="Kesehatan">Kesehatan</SelectItem>
+                  <SelectItem value="Pendidikan">Pendidikan</SelectItem>
+                  <SelectItem value="Pertanian">Pertanian</SelectItem>
+                  <SelectItem value="Perikanan">Perikanan</SelectItem>
+                  <SelectItem value="Konstruksi">Konstruksi</SelectItem>
                 </SelectContent>
               </Select>
             </div>

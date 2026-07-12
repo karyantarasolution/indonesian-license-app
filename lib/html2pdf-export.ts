@@ -191,7 +191,7 @@ export async function exportAnalisisSektorHtml(data: License[], sectorData: { se
 
   const html = `
     ${getTableStyle()}
-    ${getKopSuratHTML("DETAIL LAPORAN ANALISIS SEKTOR USAHA", "Analisis perizinan berdasarkan jenis usaha")}
+    ${getKopSuratHTML("DETAIL LAPORAN ANALISIS SEKTOR", "Analisis perizinan berdasarkan jenis izin")}
     <p style="text-align: center; font-size: 11px; margin-top: -10px; margin-bottom: 20px;">Tanggal Laporan: ${format(new Date(), 'dd MMMM yyyy')}</p>
     
     <table>

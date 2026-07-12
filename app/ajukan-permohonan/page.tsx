@@ -231,10 +231,10 @@ export default function AjukanPermohonanPage() {
     await addFile(suratPernyataanFile, "Surat Pernyataan");
 
     // Upload dokumen persyaratan berdasarkan jenis izin
-    if (isUsahaIzin()) {
-      await addFile(skduFile, "SKDU");
-      await addFiles(fotoLokasiUsahaFile, "Foto Lokasi Usaha");
-      await addFile(denahLokasiUsahaFile, "Denah Lokasi Usaha");
+    if (isNonBangunanIzin()) {
+      await addFile(skduFile, "SKD");
+      await addFiles(fotoLokasiUsahaFile, "Foto Lokasi");
+      await addFile(denahLokasiUsahaFile, "Denah Lokasi");
       await addFile(suratKuasaPemohonFile, "Surat Kuasa Pemohon");
     } else if (isBangunanIzin()) {
       await addFile(sertifikatTanahFile, "Sertifikat Tanah");
@@ -431,33 +431,33 @@ export default function AjukanPermohonanPage() {
     const type = formData.jenisIzin;
     const fields: Array<{ label: string; key: string; type: "text" | "select" | "textarea"; required: boolean; options?: string[] }> = [];
 
-    if (["Izin Usaha Perdagangan", "Izin Usaha Pariwisata", "Izin Usaha Kesehatan", "Izin Usaha Pendidikan", "Izin Usaha Pertanian", "Izin Usaha Perikanan"].includes(type)) {
-      fields.push({ label: "Jenis Usaha", key: "jenisUsaha", type: "text", required: true });
-      fields.push({ label: "Lokasi Usaha", key: "lokasiKegiatanUsaha", type: "textarea", required: true });
+    if (["Izin Perdagangan", "Izin Pariwisata", "Izin Kesehatan", "Izin Pendidikan", "Izin Pertanian", "Izin Perikanan"].includes(type)) {
+      fields.push({ label: "Nama Kegiatan", key: "jenisUsaha", type: "text", required: true });
+      fields.push({ label: "Lokasi Kegiatan", key: "lokasiKegiatanUsaha", type: "textarea", required: true });
     }
     if (type === "Izin Mendirikan Bangunan (IMB)") {
       fields.push({ label: "Luas Bangunan (m²)", key: "luasBangunan", type: "text", required: true });
       fields.push({ label: "Fungsi Bangunan", key: "keteranganPemanfaatanBangunan", type: "text", required: true });
       fields.push({ label: "Jumlah Lantai", key: "jumlahLantai", type: "text", required: false });
     }
-    if (type === "Izin Usaha Kesehatan") {
+    if (type === "Izin Kesehatan") {
       fields.push({ label: "Jenis Fasilitas Kesehatan", key: "jenisFasilitasKesehatan", type: "select", required: true, options: ["Klinik", "Rumah Sakit", "Puskesmas", "Laboratorium Kesehatan", "Apotek", "Praktik Mandiri"] });
       fields.push({ label: "Nomor STR Tenaga Kesehatan", key: "nomorSTR", type: "text", required: true });
       fields.push({ label: "Alamat Lokasi Praktik", key: "alamatLokasiPraktik", type: "textarea", required: true });
     }
-    if (type === "Izin Usaha Pariwisata") {
-      fields.push({ label: "Jenis Usaha Pariwisata", key: "jenisUsahaPariwisata", type: "select", required: true, options: ["Hotel", "Restoran", "Biro Perjalanan Wisata", "Tempat Hiburan", "Objek Wisata"] });
+    if (type === "Izin Pariwisata") {
+      fields.push({ label: "Jenis Kegiatan Pariwisata", key: "jenisUsahaPariwisata", type: "select", required: true, options: ["Hotel", "Restoran", "Biro Perjalanan Wisata", "Tempat Hiburan", "Objek Wisata"] });
       fields.push({ label: "Kapasitas", key: "kapasitas", type: "text", required: true });
     }
-    if (type === "Izin Usaha Pendidikan") {
+    if (type === "Izin Pendidikan") {
       fields.push({ label: "Jenis Lembaga Pendidikan", key: "jenisLembagaPendidikan", type: "select", required: true, options: ["Formal", "Non-Formal", "Kursus Pelatihan", "Bimbingan Belajar", "Pendidikan Anak Usia Dini"] });
       fields.push({ label: "Akreditasi", key: "akreditasi", type: "text", required: false });
     }
-    if (type === "Izin Usaha Pertanian") {
+    if (type === "Izin Pertanian") {
       fields.push({ label: "Jenis Komoditas", key: "jenisKomoditas", type: "text", required: true });
       fields.push({ label: "Luas Lahan (m²)", key: "luasLahan", type: "text", required: true });
     }
-    if (type === "Izin Usaha Perikanan") {
+    if (type === "Izin Perikanan") {
       fields.push({ label: "Jenis Budidaya", key: "jenisBudidaya", type: "text", required: true });
       fields.push({ label: "Lokasi Perairan", key: "lokasiPerairan", type: "textarea", required: true });
     }
@@ -467,9 +467,9 @@ export default function AjukanPermohonanPage() {
 
   const dynamicFields = getDynamicFields();
 
-  const izinUsaha = ["Izin Usaha Perdagangan", "Izin Usaha Pariwisata", "Izin Usaha Kesehatan", "Izin Usaha Pendidikan", "Izin Usaha Pertanian", "Izin Usaha Perikanan"];
+  const izinPerizinan = ["Izin Perdagangan", "Izin Pariwisata", "Izin Kesehatan", "Izin Pendidikan", "Izin Pertanian", "Izin Perikanan"];
 
-  const isUsahaIzin = () => izinUsaha.includes(formData.jenisIzin);
+  const isNonBangunanIzin = () => izinPerizinan.includes(formData.jenisIzin);
   const isBangunanIzin = () => formData.jenisIzin === "Izin Mendirikan Bangunan (IMB)";
 
   const steps = [
@@ -769,23 +769,16 @@ export default function AjukanPermohonanPage() {
                           onValueChange={(value) => setFormData({ ...formData, sektor: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Pilih sektor usaha" />
+                            <SelectValue placeholder="Pilih sektor" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Perdagangan">Perdagangan</SelectItem>
-                            <SelectItem value="Konstruksi">Konstruksi</SelectItem>
-                            <SelectItem value="Industri">Industri</SelectItem>
                             <SelectItem value="Pariwisata">Pariwisata</SelectItem>
-                            <SelectItem value="Sosial">Sosial</SelectItem>
-                            <SelectItem value="PUPR">PUPR</SelectItem>
                             <SelectItem value="Kesehatan">Kesehatan</SelectItem>
                             <SelectItem value="Pendidikan">Pendidikan</SelectItem>
-                            <SelectItem value="Transportasi">Transportasi</SelectItem>
                             <SelectItem value="Pertanian">Pertanian</SelectItem>
                             <SelectItem value="Perikanan">Perikanan</SelectItem>
-                            <SelectItem value="Teknologi Informasi">Teknologi Informasi</SelectItem>
-                            <SelectItem value="Keuangan">Keuangan</SelectItem>
-                            <SelectItem value="Lainnya">Lainnya</SelectItem>
+                            <SelectItem value="Konstruksi">Konstruksi</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -808,7 +801,7 @@ export default function AjukanPermohonanPage() {
                         id="alamatUsaha"
                         value={formData.alamatUsaha}
                         onChange={(e) => setFormData({ ...formData, alamatUsaha: e.target.value })}
-                        placeholder="Alamat lengkap usaha"
+                        placeholder="Alamat lengkap"
                         required
                         rows={3}
                       />
@@ -824,12 +817,12 @@ export default function AjukanPermohonanPage() {
                           <SelectValue placeholder="Pilih jenis izin" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Izin Usaha Perdagangan">Izin Usaha Perdagangan</SelectItem>
-                          <SelectItem value="Izin Usaha Pariwisata">Izin Usaha Pariwisata</SelectItem>
-                          <SelectItem value="Izin Usaha Kesehatan">Izin Usaha Kesehatan</SelectItem>
-                          <SelectItem value="Izin Usaha Pendidikan">Izin Usaha Pendidikan</SelectItem>
-                          <SelectItem value="Izin Usaha Pertanian">Izin Usaha Pertanian</SelectItem>
-                          <SelectItem value="Izin Usaha Perikanan">Izin Usaha Perikanan</SelectItem>
+                          <SelectItem value="Izin Perdagangan">Izin Perdagangan</SelectItem>
+                          <SelectItem value="Izin Pariwisata">Izin Pariwisata</SelectItem>
+                          <SelectItem value="Izin Kesehatan">Izin Kesehatan</SelectItem>
+                          <SelectItem value="Izin Pendidikan">Izin Pendidikan</SelectItem>
+                          <SelectItem value="Izin Pertanian">Izin Pertanian</SelectItem>
+                          <SelectItem value="Izin Perikanan">Izin Perikanan</SelectItem>
                           <SelectItem value="Izin Mendirikan Bangunan (IMB)">Izin Mendirikan Bangunan (IMB)</SelectItem>
                         </SelectContent>
                       </Select>
@@ -913,12 +906,12 @@ export default function AjukanPermohonanPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="lokasiKegiatanUsaha">Lokasi Kegiatan Usaha *</Label>
+                      <Label htmlFor="lokasiKegiatanUsaha">Lokasi Kegiatan *</Label>
                       <Textarea
                         id="lokasiKegiatanUsaha"
                         value={formData.lokasiKegiatanUsaha}
                         onChange={(e) => setFormData({ ...formData, lokasiKegiatanUsaha: e.target.value })}
-                        placeholder="Alamat lengkap lokasi kegiatan usaha"
+                        placeholder="Alamat lengkap lokasi kegiatan"
                         required
                         rows={3}
                       />
@@ -1037,23 +1030,16 @@ export default function AjukanPermohonanPage() {
                           onValueChange={(value) => setFormData({ ...formData, sektor: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Pilih sektor usaha" />
+                            <SelectValue placeholder="Pilih sektor" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Perdagangan">Perdagangan</SelectItem>
-                            <SelectItem value="Konstruksi">Konstruksi</SelectItem>
-                            <SelectItem value="Industri">Industri</SelectItem>
                             <SelectItem value="Pariwisata">Pariwisata</SelectItem>
-                            <SelectItem value="Sosial">Sosial</SelectItem>
-                            <SelectItem value="PUPR">PUPR</SelectItem>
                             <SelectItem value="Kesehatan">Kesehatan</SelectItem>
                             <SelectItem value="Pendidikan">Pendidikan</SelectItem>
-                            <SelectItem value="Transportasi">Transportasi</SelectItem>
                             <SelectItem value="Pertanian">Pertanian</SelectItem>
                             <SelectItem value="Perikanan">Perikanan</SelectItem>
-                            <SelectItem value="Teknologi Informasi">Teknologi Informasi</SelectItem>
-                            <SelectItem value="Keuangan">Keuangan</SelectItem>
-                            <SelectItem value="Lainnya">Lainnya</SelectItem>
+                            <SelectItem value="Konstruksi">Konstruksi</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1125,12 +1111,12 @@ export default function AjukanPermohonanPage() {
                           <SelectValue placeholder="Pilih jenis izin" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Izin Usaha Perdagangan">Izin Usaha Perdagangan</SelectItem>
-                          <SelectItem value="Izin Usaha Pariwisata">Izin Usaha Pariwisata</SelectItem>
-                          <SelectItem value="Izin Usaha Kesehatan">Izin Usaha Kesehatan</SelectItem>
-                          <SelectItem value="Izin Usaha Pendidikan">Izin Usaha Pendidikan</SelectItem>
-                          <SelectItem value="Izin Usaha Pertanian">Izin Usaha Pertanian</SelectItem>
-                          <SelectItem value="Izin Usaha Perikanan">Izin Usaha Perikanan</SelectItem>
+                          <SelectItem value="Izin Perdagangan">Izin Perdagangan</SelectItem>
+                          <SelectItem value="Izin Pariwisata">Izin Pariwisata</SelectItem>
+                          <SelectItem value="Izin Kesehatan">Izin Kesehatan</SelectItem>
+                          <SelectItem value="Izin Pendidikan">Izin Pendidikan</SelectItem>
+                          <SelectItem value="Izin Pertanian">Izin Pertanian</SelectItem>
+                          <SelectItem value="Izin Perikanan">Izin Perikanan</SelectItem>
                           <SelectItem value="Izin Mendirikan Bangunan (IMB)">Izin Mendirikan Bangunan (IMB)</SelectItem>
                         </SelectContent>
                       </Select>
@@ -1767,12 +1753,12 @@ export default function AjukanPermohonanPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                {isUsahaIzin() ? (
+                {isNonBangunanIzin() ? (
                   <div className="space-y-6">
                     {/* Form SKDU - Wajib */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Label className="text-base font-semibold text-slate-900">Surat Keterangan Domisili Usaha (SKDU) dari Desa/Kelurahan *</Label>
+                        <Label className="text-base font-semibold text-slate-900">Surat Keterangan Domisili (SKD) dari Desa/Kelurahan *</Label>
                         <span className="text-red-500"></span>
                       </div>
                       <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
@@ -1832,7 +1818,7 @@ export default function AjukanPermohonanPage() {
                     {/* Form Foto Lokasi Usaha - Wajib */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Label className="text-base font-semibold text-slate-900">Foto Lokasi Usaha (Tampak Luar & Dalam) *</Label>
+                        <Label className="text-base font-semibold text-slate-900">Foto Lokasi (Tampak Luar & Dalam) *</Label>
                         <span className="text-red-500"></span>
                       </div>
                       <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
@@ -1902,7 +1888,7 @@ export default function AjukanPermohonanPage() {
                     {/* Form Denah Lokasi Usaha - Wajib */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Label className="text-base font-semibold text-slate-900">Denah Lokasi Usaha *</Label>
+                        <Label className="text-base font-semibold text-slate-900">Denah Lokasi *</Label>
                         <span className="text-red-500"></span>
                       </div>
                       <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
@@ -2416,7 +2402,7 @@ export default function AjukanPermohonanPage() {
                     type="submit"
                     disabled={
                       isSubmitting || 
-                      (isUsahaIzin() && (!skduFile || fotoLokasiUsahaFile.length < 2 || !denahLokasiUsahaFile)) ||
+                      (isNonBangunanIzin() && (!skduFile || fotoLokasiUsahaFile.length < 2 || !denahLokasiUsahaFile)) ||
                       (isBangunanIzin() && (
                         !sertifikatTanahFile || 
                         !suratKeteranganTidakSengketaFile || 

@@ -187,19 +187,12 @@ const statusOptions = [
 
 const sektorOptions = [
   "Perdagangan",
-  "Konstruksi",
-  "Industri",
   "Pariwisata",
-  "Sosial",
-  "PUPR",
   "Kesehatan",
   "Pendidikan",
-  "Transportasi",
   "Pertanian",
   "Perikanan",
-  "Teknologi Informasi",
-  "Keuangan",
-  "Lainnya",
+  "Konstruksi",
 ];
 
 function LicenseForm({
@@ -477,7 +470,7 @@ function LicenseForm({
                 id="jenisIzin"
                 value={formData.jenisIzin}
                 onChange={(e) => handleFieldChange("jenisIzin", e.target.value)}
-                placeholder="Contoh: Izin Usaha Perdagangan"
+                placeholder="Contoh: Izin Perdagangan"
                 className={`form-input ${
                   fieldErrors.jenisIzin
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -512,7 +505,7 @@ function LicenseForm({
                       : ""
                   }`}
                 >
-                  <SelectValue placeholder="Pilih sektor usaha" />
+                  <SelectValue placeholder="Pilih sektor" />
                 </SelectTrigger>
                 <SelectContent>
                   {sektorOptions.map((sektor) => (

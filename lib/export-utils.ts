@@ -768,8 +768,8 @@ export async function exportAnalisisSektorToPDF(
     // Add letterhead
     await addLetterhead(
       doc,
-      "DETAIL LAPORAN ANALISIS SEKTOR USAHA",
-      "Analisis perizinan berdasarkan jenis usaha dengan performa dan tren",
+      "DETAIL LAPORAN ANALISIS SEKTOR",
+      "Analisis perizinan berdasarkan jenis izin dengan performa dan tren",
     );
 
     doc.setFontSize(9);

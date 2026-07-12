@@ -255,7 +255,7 @@ function PemohonDashboardContent() {
                     <Input
                       value={formData.jenisIzin}
                       onChange={(e) => setFormData({ ...formData, jenisIzin: e.target.value })}
-                      placeholder="Contoh: Izin Usaha Perdagangan"
+                      placeholder="Contoh: Izin Perdagangan"
                       required
                     />
                   </div>
@@ -264,7 +264,7 @@ function PemohonDashboardContent() {
                     <Input
                       value={formData.namaIzin}
                       onChange={(e) => setFormData({ ...formData, namaIzin: e.target.value })}
-                      placeholder="Contoh: IUP Toko Elektronik"
+                      placeholder="Contoh: Izin Toko Elektronik"
                       required
                     />
                   </div>
@@ -299,10 +299,12 @@ function PemohonDashboardContent() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Perdagangan">Perdagangan</SelectItem>
+                        <SelectItem value="Pariwisata">Pariwisata</SelectItem>
+                        <SelectItem value="Kesehatan">Kesehatan</SelectItem>
+                        <SelectItem value="Pendidikan">Pendidikan</SelectItem>
+                        <SelectItem value="Pertanian">Pertanian</SelectItem>
+                        <SelectItem value="Perikanan">Perikanan</SelectItem>
                         <SelectItem value="Konstruksi">Konstruksi</SelectItem>
-                        <SelectItem value="Industri">Industri</SelectItem>
-                        <SelectItem value="Jasa">Jasa</SelectItem>
-                        <SelectItem value="Lainnya">Lainnya</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

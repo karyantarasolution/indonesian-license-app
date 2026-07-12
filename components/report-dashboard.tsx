@@ -576,7 +576,7 @@ export default function ReportDashboard() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                Sektor Usaha
+                Sektor
               </label>
               <Select value={selectedSector} onValueChange={setSelectedSector}>
                 <SelectTrigger>
@@ -586,19 +586,12 @@ export default function ReportDashboard() {
                 <SelectContent>
                   <SelectItem value="all">Semua Sektor</SelectItem>
                   <SelectItem value="Perdagangan">Perdagangan</SelectItem>
-                  <SelectItem value="Konstruksi">Konstruksi</SelectItem>
-                  <SelectItem value="Industri">Industri</SelectItem>
                   <SelectItem value="Pariwisata">Pariwisata</SelectItem>
-                  <SelectItem value="Sosial">Sosial</SelectItem>
-                  <SelectItem value="PUPR">PUPR</SelectItem>
                   <SelectItem value="Kesehatan">Kesehatan</SelectItem>
                   <SelectItem value="Pendidikan">Pendidikan</SelectItem>
-                  <SelectItem value="Transportasi">Transportasi</SelectItem>
                   <SelectItem value="Pertanian">Pertanian</SelectItem>
                   <SelectItem value="Perikanan">Perikanan</SelectItem>
-                  <SelectItem value="Teknologi Informasi">Teknologi Informasi</SelectItem>
-                  <SelectItem value="Keuangan">Keuangan</SelectItem>
-                  <SelectItem value="Lainnya">Lainnya</SelectItem>
+                  <SelectItem value="Konstruksi">Konstruksi</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1236,10 +1229,10 @@ export default function ReportDashboard() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-blue-600" />
-                    Detail Laporan Analisis Sektor Usaha
+                    Detail Laporan Analisis Sektor
                   </CardTitle>
                   <p className="text-sm text-gray-600 mt-1">
-                    Analisis perizinan berdasarkan jenis usaha dengan performa dan tren
+                    Analisis perizinan berdasarkan jenis izin dengan performa dan tren
                   </p>
                 </div>
                 <Button
