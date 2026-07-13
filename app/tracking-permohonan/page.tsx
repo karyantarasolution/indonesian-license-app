@@ -35,11 +35,33 @@ export default function TrackingPermohonanPage() {
   const [showFilesPanel, setShowFilesPanel] = useState(false);
   const [editingFileIndex, setEditingFileIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [payment, setPayment] = useState<any>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Debug: Log trackingCode changes
   useEffect(() => {
     console.log("Tracking code changed:", trackingCode, "trimmed length:", trackingCode.trim().length, "isDisabled:", isLoading || !trackingCode || trackingCode.trim().length === 0);
   }, [trackingCode, isLoading]);
+
+  // Fetch payment data when license is loaded
+  useEffect(() => {
+    if (license && license.trackingCode && license.status === "selesai" && license.verificationStatus !== "rejected") {
+      setPaymentLoading(true);
+      fetch(`/api/mysql/payments/tracking/${encodeURIComponent(license.trackingCode)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data && data.data.length > 0) {
+            setPayment(data.data[0]);
+          } else {
+            setPayment(null);
+          }
+        })
+        .catch(() => setPayment(null))
+        .finally(() => setPaymentLoading(false));
+    } else {
+      setPayment(null);
+    }
+  }, [license]);
 
   const handleSearch = async () => {
     if (!trackingCode.trim()) {
@@ -583,24 +605,139 @@ export default function TrackingPermohonanPage() {
 
               {/* Payment & Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-emerald-600" />
-                      Info Pembayaran
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-slate-600 mb-3">
-                      Untuk informasi pembayaran retribusi izin, silakan hubungi petugas atau lakukan pembayaran melalui:
-                    </p>
-                    <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">BNI:</span> 1234567890 a.n. DPMPTSP Tapin</p>
-                      <p><span className="font-medium">VA BNI:</span> 9881234567890</p>
-                      <p><span className="font-medium">VA Mandiri:</span> 891234567890</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Dynamic Payment Section - shows when status is selesai */}
+                {license.status === "selesai" && license.verificationStatus !== "rejected" && (
+                  <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-emerald-600" />
+                        Pembayaran Retribusi
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {paymentLoading ? (
+                        <p className="text-sm text-slate-600">Memeriksa status pembayaran...</p>
+                      ) : payment ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-emerald-200">
+                            <span className="text-sm font-medium text-slate-700">Status Pembayaran</span>
+                            <Badge className={
+                              payment.status_pembayaran === "lunas" ? "bg-green-500 text-white" :
+                              payment.status_pembayaran === "dibayar" ? "bg-blue-500 text-white" :
+                              payment.status_pembayaran === "batal" ? "bg-red-500 text-white" :
+                              "bg-yellow-500 text-white"
+                            }>
+                              {payment.status_pembayaran === "lunas" ? "Lunas" :
+                               payment.status_pembayaran === "dibayar" ? "Dibayar" :
+                               payment.status_pembayaran === "batal" ? "Batal" : "Menunggu Pembayaran"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-emerald-200">
+                            <span className="text-sm font-medium text-slate-700">Jumlah</span>
+                            <span className="text-lg font-bold text-emerald-700">
+                              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(payment.jumlah)}
+                            </span>
+                          </div>
+                          {payment.metode_pembayaran && (
+                            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-emerald-200">
+                              <span className="text-sm font-medium text-slate-700">Metode</span>
+                              <span className="text-sm text-slate-800 capitalize">{payment.metode_pembayaran}</span>
+                            </div>
+                          )}
+                          {payment.status_pembayaran === "lunas" && (
+                            <div className="mt-2 p-3 bg-green-100 rounded-lg border border-green-300 text-center">
+                              <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
+                              <p className="text-sm font-medium text-green-800">Pembayaran Lunas</p>
+                            </div>
+                          )}
+                          {payment.status_pembayaran === "pending" && (
+                            <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-300">
+                              <p className="text-sm text-yellow-800 text-center">
+                                Silakan lakukan pembayaran ke rekening di bawah ini
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-sm text-slate-600">
+                            Permohonan Anda telah <strong className="text-emerald-700">selesai</strong>. Silakan lakukan pembayaran retribusi izin:
+                          </p>
+                          <div className="space-y-2 text-sm">
+                            <p><span className="font-medium">BNI:</span> 1234567890 a.n. DPMPTSP Tapin</p>
+                            <p><span className="font-medium">VA BNI:</span> 9881234567890</p>
+                            <p><span className="font-medium">VA Mandiri:</span> 891234567890</p>
+                          </div>
+                          <p className="text-xs text-slate-500 italic">
+                            Hubungi petugas untuk konfirmasi pembayaran
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Certificate Section - shows when payment is lunas */}
+                {license.status === "selesai" && license.verificationStatus !== "rejected" && payment && payment.status_pembayaran === "lunas" && (
+                  <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-blue-600" />
+                        Sertifikat Perizinan
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="p-4 bg-white rounded-lg border border-blue-200 text-center">
+                          <CheckCircle className="h-10 w-10 text-blue-600 mx-auto mb-2" />
+                          <p className="text-sm font-medium text-blue-800 mb-1">Pembayaran Telah Diterima</p>
+                          <p className="text-xs text-slate-600 mb-3">Sertifikat perizinan Anda siap diunduh</p>
+                          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 mb-3">
+                            <p className="text-sm font-bold text-blue-900">{license.namaIzin}</p>
+                            <p className="text-xs text-slate-600">Kode: {license.trackingCode}</p>
+                          </div>
+                          <Button
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => {
+                              toast({
+                                title: "Sertifikat",
+                                description: "Sertifikat perizinan akan dikirim ke email Anda atau dapat diambil di kantor DPMPTSP.",
+                              });
+                            }}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Unduh Sertifikat
+                          </Button>
+                        </div>
+                        <p className="text-xs text-slate-500 text-center">
+                          Jika mengalami kendala, hubungi DPMPTSP Kabupaten Tapin
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Fallback Info - when status is not selesai or rejected */}
+                {(license.status !== "selesai" || license.verificationStatus === "rejected") && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-emerald-600" />
+                        Info Pembayaran
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-slate-600 mb-3">
+                        Untuk informasi pembayaran retribusi izin, silakan hubungi petugas atau lakukan pembayaran melalui:
+                      </p>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="font-medium">BNI:</span> 1234567890 a.n. DPMPTSP Tapin</p>
+                        <p><span className="font-medium">VA BNI:</span> 9881234567890</p>
+                        <p><span className="font-medium">VA Mandiri:</span> 891234567890</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardHeader className="pb-3">

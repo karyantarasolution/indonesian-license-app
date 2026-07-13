@@ -42,12 +42,25 @@ export async function exportHtmlToPDF(
   element.style.padding = "20px";
   element.style.fontFamily = "Arial, sans-serif";
   element.style.color = "#000";
+  element.style.backgroundColor = "#ffffff";
+  
+  // Override oklch CSS variables with hex fallbacks to prevent html2canvas parse error
+  const hexOverrides = `
+    --background: #ffffff; --foreground: #262626; --card: #ffffff; --card-foreground: #262626;
+    --popover: #ffffff; --popover-foreground: #262626; --primary: #333333; --primary-foreground: #fafafa;
+    --secondary: #f5f5f5; --secondary-foreground: #333333; --muted: #f5f5f5; --muted-foreground: #8c8c8c;
+    --accent: #f5f5f5; --accent-foreground: #333333; --destructive: #dc3545; --destructive-foreground: #dc3545;
+    --border: #e5e5e5; --input: #e5e5e5; --ring: #8c8c8c;
+  `;
+  const overrideStyle = document.createElement("style");
+  overrideStyle.textContent = `:root { ${hexOverrides} }`;
+  element.prepend(overrideStyle);
   
   const opt = {
     margin: 10,
     filename: filename + '.pdf',
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
     jsPDF: { unit: 'mm', format: 'a4', orientation: orientation }
   };
 
@@ -306,41 +319,49 @@ export async function exportDaftarPemohonHtml(data: License[], filename = "lapor
   await exportHtmlToPDF(html, filename, "landscape");
 }
 
-// 6. Laporan Ringkasan Eksekutif
-export async function exportRingkasanEksekutifHtml(data: License[], filename = "laporan-ringkasan-eksekutif") {
-  const total = data.length;
-  const selesai = data.filter(l => l.status === "selesai").length;
-  const proses = data.filter(l => ["draft", "proses", "rekomendasi"].includes(l.status)).length;
-  const ditolak = data.filter(l => l.verificationStatus === "rejected").length;
+// 6. Laporan Permohonan Ditolak
+export async function exportPermohonanDitolakHtml(data: License[], filename = "laporan-permohonan-ditolak") {
+  const rejectedLicenses = data.filter(l => l.verificationStatus === "rejected");
+
+  const tableRows = rejectedLicenses.map((license, index) => {
+    const tanggalMasuk = license.permohonanMasuk ? format(new Date(license.permohonanMasuk), 'dd/MM/yyyy') : '-';
+    return `
+      <tr>
+        <td style="text-align: center;">${index + 1}</td>
+        <td>${license.trackingCode || '-'}</td>
+        <td>${license.pemohonNama || '-'}</td>
+        <td>${license.namaIzin || '-'}</td>
+        <td style="text-align: center;">${tanggalMasuk}</td>
+        <td>${license.verificationNotes || 'Tidak ada alasan yang dicantumkan'}</td>
+      </tr>
+    `;
+  }).join('');
 
   const html = `
     ${getTableStyle()}
-    ${getKopSuratHTML("LAPORAN RINGKASAN EKSEKUTIF", "Ringkasan Performa Pelayanan Perizinan")}
+    ${getKopSuratHTML("LAPORAN PERMOHONAN DITOLAK", "Daftar Permohonan Perizinan Yang Ditolak")}
     <p style="text-align: center; font-size: 11px; margin-top: -10px; margin-bottom: 20px;">Tanggal Laporan: ${format(new Date(), 'dd MMMM yyyy')}</p>
     
-    <div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 1.6; margin-bottom: 20px;">
-      <p>Berikut adalah ringkasan kinerja layanan perizinan DPMPTSP Kabupaten Tapin:</p>
-      
-      <table style="width: 50%; margin: 0 auto; border-collapse: collapse; text-align: center; font-size: 12px;">
-        <tr>
-          <th style="padding: 10px; border: 1px solid #000; background: #f3f4f6;">Total Permohonan</th>
-          <td style="padding: 10px; border: 1px solid #000; font-weight: bold; font-size: 14px;">${total}</td>
-        </tr>
-        <tr>
-          <th style="padding: 10px; border: 1px solid #000; background: #f3f4f6;">Selesai (Diterbitkan)</th>
-          <td style="padding: 10px; border: 1px solid #000; color: green; font-weight: bold; font-size: 14px;">${selesai}</td>
-        </tr>
-        <tr>
-          <th style="padding: 10px; border: 1px solid #000; background: #f3f4f6;">Dalam Proses</th>
-          <td style="padding: 10px; border: 1px solid #000; color: orange; font-weight: bold; font-size: 14px;">${proses}</td>
-        </tr>
-        <tr>
-          <th style="padding: 10px; border: 1px solid #000; background: #f3f4f6;">Ditolak</th>
-          <td style="padding: 10px; border: 1px solid #000; color: red; font-weight: bold; font-size: 14px;">${ditolak}</td>
-        </tr>
-      </table>
+    <div style="font-size: 11px; margin-bottom: 15px;">
+      <strong>Total Permohonan Ditolak:</strong> ${rejectedLicenses.length} dari ${data.length} permohonan
     </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Kode Tracking</th>
+          <th>Nama Pemohon</th>
+          <th>Jenis Izin</th>
+          <th>Tanggal</th>
+          <th>Alasan Penolakan</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRows.length > 0 ? tableRows : '<tr><td colspan="6" style="text-align: center;">Tidak ada permohonan yang ditolak</td></tr>'}
+      </tbody>
+    </table>
   `;
 
-  await exportHtmlToPDF(html, filename, "portrait");
+  await exportHtmlToPDF(html, filename, "landscape");
 }

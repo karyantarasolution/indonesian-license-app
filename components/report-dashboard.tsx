@@ -39,7 +39,7 @@ import {
   exportAnalisisSektorHtml,
   exportIzinExpiredHtml,
   exportDaftarPemohonHtml,
-  exportRingkasanEksekutifHtml
+  exportPermohonanDitolakHtml
 } from "../lib/html2pdf-export";
 import { useToast } from "@/hooks/use-toast";
 
@@ -57,7 +57,7 @@ export default function ReportDashboard() {
   const [isExportingRisikoPDF, setIsExportingRisikoPDF] = useState(false);
   const [isExportingIzinExpiredPDF, setIsExportingIzinExpiredPDF] = useState(false);
   const [isExportingDaftarPemohonPDF, setIsExportingDaftarPemohonPDF] = useState(false);
-  const [isExportingRingkasanPDF, setIsExportingRingkasanPDF] = useState(false);
+  const [isExportingDitolakPDF, setIsExportingDitolakPDF] = useState(false);
 
   const overdueLicenses = getOverdueLicenses();
 
@@ -449,17 +449,22 @@ export default function ReportDashboard() {
     }
   };
 
-  const handleDownloadRingkasanPDF = async () => {
-    setIsExportingRingkasanPDF(true);
+  const handleDownloadDitolakPDF = async () => {
+    const rejectedLicenses = filteredLicenses.filter(l => l.verificationStatus === "rejected");
+    if (rejectedLicenses.length === 0) {
+      toast({ title: "Tidak ada data", description: "Tidak ada permohonan yang ditolak.", variant: "destructive" });
+      return;
+    }
+    setIsExportingDitolakPDF(true);
     try {
       const timestamp = new Date().toISOString().split("T")[0];
-      const filename = `laporan-ringkasan-eksekutif-${timestamp}`;
-      await exportRingkasanEksekutifHtml(filteredLicenses, filename);
-      toast({ title: "Berhasil", description: "PDF laporan ringkasan eksekutif berhasil diunduh." });
+      const filename = `laporan-permohonan-ditolak-${timestamp}`;
+      await exportPermohonanDitolakHtml(filteredLicenses, filename);
+      toast({ title: "Berhasil", description: "PDF laporan permohonan ditolak berhasil diunduh." });
     } catch (error) {
       toast({ title: "Ekspor gagal", variant: "destructive" });
     } finally {
-      setIsExportingRingkasanPDF(false);
+      setIsExportingDitolakPDF(false);
     }
   };
 
@@ -631,9 +636,9 @@ export default function ReportDashboard() {
               <FileText className="h-4 w-4" />
               Daftar Pemohon
             </TabsTrigger>
-            <TabsTrigger value="ringkasan-eksekutif" className="flex items-center gap-2">
-              <FileBarChart className="h-4 w-4" />
-              Ringkasan Eksekutif
+            <TabsTrigger value="permohonan-ditolak" className="flex items-center gap-2">
+              <XCircle className="h-4 w-4" />
+              Permohonan Ditolak
             </TabsTrigger>
           </TabsList>
         </div>
@@ -2271,31 +2276,21 @@ export default function ReportDashboard() {
           </Card>
         </TabsContent>
 
-        {/* Ringkasan Eksekutif Tab */}
-        <TabsContent value="ringkasan-eksekutif" className="space-y-6">
-          {/* Executive Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        {/* Laporan Permohonan Ditolak Tab */}
+        <TabsContent value="permohonan-ditolak" className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-700">Total Permohonan</p>
-                    <p className="text-2xl font-bold text-blue-900">{reportStats.total}</p>
-                    <p className="text-xs text-blue-600">semua perizinan</p>
+                    <p className="text-sm font-medium text-red-700">Total Ditolak</p>
+                    <p className="text-2xl font-bold text-red-900">
+                      {filteredLicenses.filter(l => l.verificationStatus === "rejected").length}
+                    </p>
+                    <p className="text-xs text-red-600">permohonan ditolak</p>
                   </div>
-                  <FileText className="h-8 w-8 text-blue-600" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-green-700">Selesai</p>
-                    <p className="text-2xl font-bold text-green-900">{reportStats.selesai}</p>
-                    <p className="text-xs text-green-600">perizinan diterbitkan</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                  <XCircle className="h-8 w-8 text-red-600" />
                 </div>
               </CardContent>
             </Card>
@@ -2303,130 +2298,92 @@ export default function ReportDashboard() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-amber-700">Dalam Proses</p>
-                    <p className="text-2xl font-bold text-amber-900">{reportStats.proses + reportStats.rekomendasi}</p>
-                    <p className="text-xs text-amber-600">sedang diproses</p>
+                    <p className="text-sm font-medium text-amber-700">Menunggu Verifikasi</p>
+                    <p className="text-2xl font-bold text-amber-900">
+                      {filteredLicenses.filter(l => l.verificationStatus === "pending").length}
+                    </p>
+                    <p className="text-xs text-amber-600">belum diverifikasi</p>
                   </div>
                   <Clock className="h-8 w-8 text-amber-600" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-red-700">Ditolak / Terlambat</p>
-                    <p className="text-2xl font-bold text-red-900">
-                      {filteredLicenses.filter(l => l.verificationStatus === "rejected" || l.totalSLA > 14).length}
+                    <p className="text-sm font-medium text-green-700">Disetujui</p>
+                    <p className="text-2xl font-bold text-green-900">
+                      {filteredLicenses.filter(l => l.verificationStatus === "approved").length}
                     </p>
-                    <p className="text-xs text-red-600">perizinan bermasalah</p>
+                    <p className="text-xs text-green-600">permohonan disetujui</p>
                   </div>
-                  <XCircle className="h-8 w-8 text-red-600" />
+                  <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Detailed Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <BarChart3 className="h-5 w-5 text-blue-600" />
-                  Ringkasan Status Perizinan
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-700">Total Permohonan Masuk</span>
-                    <span className="text-lg font-bold text-gray-900">{reportStats.total}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <span className="text-sm font-medium text-green-700">Selesai / Diterbitkan</span>
-                    <span className="text-lg font-bold text-green-900">{reportStats.selesai}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <span className="text-sm font-medium text-blue-700">Sedang Diproses</span>
-                    <span className="text-lg font-bold text-blue-900">{reportStats.proses}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                    <span className="text-sm font-medium text-yellow-700">Rekomendasi</span>
-                    <span className="text-lg font-bold text-yellow-900">{reportStats.rekomendasi}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-700">Draft</span>
-                    <span className="text-lg font-bold text-gray-900">{reportStats.draft}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <span className="text-sm font-medium text-red-700">Terlambat</span>
-                    <span className="text-lg font-bold text-red-900">{reportStats.terlambat}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                    <span className="text-sm font-medium text-purple-700">Rata-rata SLA</span>
-                    <span className="text-lg font-bold text-purple-900">{reportStats.avgSLA} hari</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
-                  Kinerja Pelayanan
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                    <span className="text-sm font-medium text-emerald-700">Tepat Waktu (SLA &le; 14 hari)</span>
-                    <span className="text-lg font-bold text-emerald-900">
-                      {filteredLicenses.filter(l => l.totalSLA <= 14).length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <span className="text-sm font-medium text-red-700">Terlambat (SLA &gt; 14 hari)</span>
-                    <span className="text-lg font-bold text-red-900">
-                      {filteredLicenses.filter(l => l.totalSLA > 14).length}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Persentase Ketepatan</p>
-                    <div className="w-full bg-gray-200 rounded-full h-4">
-                      <div
-                        className="bg-emerald-500 h-4 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${filteredLicenses.length > 0 ? Math.round((filteredLicenses.filter(l => l.totalSLA <= 14).length / filteredLicenses.length) * 100) : 0}%`
-                        }}
-                      />
-                    </div>
-                    <p className="text-right text-sm font-semibold text-emerald-700 mt-1">
-                      {filteredLicenses.length > 0 ? Math.round((filteredLicenses.filter(l => l.totalSLA <= 14).length / filteredLicenses.length) * 100) : 0}%
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <span className="text-sm font-medium text-blue-700">Total Izin Expired</span>
-                    <span className="text-lg font-bold text-blue-900">{expiredCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                    <span className="text-sm font-medium text-amber-700">Akan Expired (30 hari)</span>
-                    <span className="text-lg font-bold text-amber-900">{expiringSoonCount}</span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadRingkasanPDF}
-                    disabled={isExportingRingkasanPDF}
-                    className="w-full flex items-center justify-center gap-2 mt-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    {isExportingRingkasanPDF ? "Mengunduh..." : "Download PDF Ringkasan"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Rejected Applications Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <XCircle className="h-5 w-5 text-red-600" />
+                Daftar Permohonan Ditolak
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
+                <table className="w-full border-collapse bg-white">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-red-50 to-red-100 border-b-2 border-red-300">
+                      <th className="text-center p-3 text-xs font-bold text-red-800 border-r border-red-200 w-12">No</th>
+                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Kode Tracking</th>
+                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Nama Pemohon</th>
+                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Jenis Izin</th>
+                      <th className="text-center p-3 text-xs font-bold text-red-800 border-r border-red-200">Tanggal</th>
+                      <th className="text-left p-3 text-xs font-bold text-red-800">Alasan Penolakan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLicenses.filter(l => l.verificationStatus === "rejected").length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-8 text-gray-500">
+                          Tidak ada permohonan yang ditolak
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredLicenses
+                        .filter(l => l.verificationStatus === "rejected")
+                        .map((license, index) => (
+                          <tr key={license.id} className="hover:bg-red-50 transition-colors border-b border-slate-200">
+                            <td className="p-3 text-center text-sm text-slate-700 border-r border-slate-200 font-medium">{index + 1}</td>
+                            <td className="p-3 text-sm text-slate-800 border-r border-slate-200 font-mono font-semibold">{license.trackingCode || "-"}</td>
+                            <td className="p-3 text-sm text-slate-800 border-r border-slate-200 font-medium">{license.pemohonNama || "-"}</td>
+                            <td className="p-3 text-sm text-slate-700 border-r border-slate-200">{license.namaIzin || "-"}</td>
+                            <td className="p-3 text-sm text-slate-700 border-r border-slate-200 text-center whitespace-nowrap">{formatDate(license.permohonanMasuk)}</td>
+                            <td className="p-3 text-sm text-red-700 font-medium">{license.verificationNotes || "Tidak ada alasan yang dicantumkan"}</td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {/* Download PDF Button */}
+              <div className="mt-4 flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadDitolakPDF}
+                  disabled={isExportingDitolakPDF}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {isExportingDitolakPDF ? "Mengunduh..." : "Download PDF"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
