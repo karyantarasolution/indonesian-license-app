@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -124,6 +124,23 @@ export default function AjukanPermohonanPage() {
   const [fotoLokasiTanahBangunanFile, setFotoLokasiTanahBangunanFile] = useState<UploadedFile[]>([]);
   const [suratPernyataanKesesuaianFungsiFile, setSuratPernyataanKesesuaianFungsiFile] = useState<UploadedFile | null>(null);
   
+  // Uploaded Files - Dokumen Persyaratan per Jenis Izin (generic)
+  const [dokumenIzin, setDokumenIzin] = useState<Record<string, UploadedFile | null>>({});
+  const [dokumenIzinMulti, setDokumenIzinMulti] = useState<Record<string, UploadedFile[]>>({});
+
+  const setDokumen = (key: string, file: UploadedFile | null) => {
+    setDokumenIzin(prev => ({ ...prev, [key]: file }));
+  };
+  const addDokumenMulti = (key: string, newFiles: UploadedFile[]) => {
+    setDokumenIzinMulti(prev => ({ ...prev, [key]: [...(prev[key] || []), ...newFiles] }));
+  };
+  const removeDokumenMulti = (key: string, index: number) => {
+    setDokumenIzinMulti(prev => ({
+      ...prev,
+      [key]: (prev[key] || []).filter((_: any, i: number) => i !== index),
+    }));
+  };
+
   const [identitasFiles, setIdentitasFiles] = useState<UploadedFile[]>([]);
   const [dokumenFiles, setDokumenFiles] = useState<UploadedFile[]>([]);
 
@@ -232,10 +249,16 @@ export default function AjukanPermohonanPage() {
 
     // Upload dokumen persyaratan berdasarkan jenis izin
     if (isNonBangunanIzin()) {
-      await addFile(skduFile, "SKD");
-      await addFiles(fotoLokasiUsahaFile, "Foto Lokasi");
-      await addFile(denahLokasiUsahaFile, "Denah Lokasi");
-      await addFile(suratKuasaPemohonFile, "Surat Kuasa Pemohon");
+      // Upload using generic dokumenIzin state
+      for (const doc of docRequirements) {
+        if (doc.multiple) {
+          const multiFiles = dokumenIzinMulti[doc.key] || [];
+          await addFiles(multiFiles, doc.label);
+        } else {
+          const singleFile = dokumenIzin[doc.key] || null;
+          await addFile(singleFile, doc.label);
+        }
+      }
     } else if (isBangunanIzin()) {
       await addFile(sertifikatTanahFile, "Sertifikat Tanah");
       await addFile(suratSewaFile, "Surat Sewa");
@@ -471,6 +494,90 @@ export default function AjukanPermohonanPage() {
 
   const isNonBangunanIzin = () => izinPerizinan.includes(formData.jenisIzin);
   const isBangunanIzin = () => formData.jenisIzin === "Izin Mendirikan Bangunan (IMB)";
+
+  // Document requirements per izin type
+  interface DocRequirement {
+    key: string;
+    label: string;
+    required: boolean;
+    multiple?: boolean;
+    description?: string;
+  }
+
+  const getDocRequirements = (): DocRequirement[] => {
+    const type = formData.jenisIzin;
+
+    if (type === "Izin Perdagangan") {
+      return [
+        { key: "skd", label: "Surat Keterangan Domisili (SKD) dari Desa/Kelurahan", required: true },
+        { key: "fotoLokasi", label: "Foto Lokasi Usaha (Tampak Luar & Dalam)", required: true, multiple: true, description: "Upload minimal 2 foto (luar & dalam)" },
+        { key: "denahLokasi", label: "Denah Lokasi Usaha", required: true },
+        { key: "suratPernyataanKesiapan", label: "Surat Pernyataan Kesiapan Usaha", required: true },
+        { key: "aktaPendirianUsaha", label: "Akta Pendirian Usaha / Surat Pernyataan Usaha", required: true },
+        { key: "suratKuasaPemohon", label: "Surat Kuasa (jika diwakilkan)", required: false },
+      ];
+    }
+
+    if (type === "Izin Pariwisata") {
+      return [
+        { key: "skd", label: "Surat Keterangan Domisili (SKD) dari Desa/Kelurahan", required: true },
+        { key: "fotoLokasi", label: "Foto Lokasi Usaha Pariwisata (Tampak Luar & Dalam)", required: true, multiple: true, description: "Upload minimal 2 foto (luar & dalam)" },
+        { key: "denahLokasi", label: "Denah Lokasi", required: true },
+        { key: "izinLingkungan", label: "Izin Lingkungan (AMDAL / UKL-UPL)", required: true },
+        { key: "sertifikatLaikUsaha", label: "Sertifikat Laik Usaha (SLU) / Sertifikat Laik Fungsi (SLF)", required: true },
+        { key: "suratPernyataanKesiapan", label: "Surat Pernyataan Kesiapan Usaha", required: true },
+      ];
+    }
+
+    if (type === "Izin Kesehatan") {
+      return [
+        { key: "skd", label: "Surat Keterangan Domisili (SKD) dari Desa/Kelurahan", required: true },
+        { key: "fotoLokasi", label: "Foto Lokasi Fasilitas Kesehatan (Tampak Luar & Dalam)", required: true, multiple: true, description: "Upload minimal 2 foto (luar & dalam)" },
+        { key: "denahLokasi", label: "Denah Lokasi", required: true },
+        { key: "strTenagaKesehatan", label: "Surat Tanda Registrasi (STR) Tenaga Kesehatan", required: true },
+        { key: "suratIzinPraktik", label: "Surat Izin Praktik (SIP) / Izin Kerja", required: true },
+        { key: "izinEdarAlkes", label: "Izin Edar Alat Kesehatan (jika applicable)", required: false, description: "Opsional - untuk instalasi alat kesehatan" },
+      ];
+    }
+
+    if (type === "Izin Pendidikan") {
+      return [
+        { key: "skd", label: "Surat Keterangan Domisili (SKD) dari Desa/Kelurahan", required: true },
+        { key: "fotoLokasi", label: "Foto Lokasi / Gedung Pendidikan (Tampak Luar & Dalam)", required: true, multiple: true, description: "Upload minimal 2 foto (luar & dalam)" },
+        { key: "denahLokasi", label: "Denah Lokasi", required: true },
+        { key: "izinOperasional", label: "Izin Operasional Lembaga Pendidikan", required: true },
+        { key: "rekomendasiDindik", label: "Surat Rekomendasi Dinas Pendidikan", required: true },
+        { key: "aktaPendirianLembaga", label: "Akta Pendirian Lembaga Pendidikan", required: true },
+        { key: "daftarTenagaPendidik", label: "Daftar Nama Tenaga Pendidik & Kependidikan", required: false, description: "Opsional" },
+      ];
+    }
+
+    if (type === "Izin Pertanian") {
+      return [
+        { key: "skd", label: "Surat Keterangan Domisili (SKD) dari Desa/Kelurahan", required: true },
+        { key: "fotoLokasi", label: "Foto Lokasi / Lahan Pertanian (Tampak Luar & Dalam)", required: true, multiple: true, description: "Upload minimal 2 foto" },
+        { key: "denahLokasi", label: "Denah Lokasi Lahan", required: true },
+        { key: "analisaRisiko", label: "Surat Analisa Risiko dari Dinas Pertanian", required: true },
+        { key: "izinPenggunaanLahan", label: "Izin Penggunaan Lahan", required: true },
+        { key: "suratPengelolaanLingkungan", label: "Surat Pernyataan Pengelolaan Lingkungan Hidup", required: false, description: "Opsional" },
+      ];
+    }
+
+    if (type === "Izin Perikanan") {
+      return [
+        { key: "skd", label: "Surat Keterangan Domisili (SKD) dari Desa/Kelurahan", required: true },
+        { key: "fotoLokasi", label: "Foto Lokasi / Area Perairan (Tampak Luar & Dalam)", required: true, multiple: true, description: "Upload minimal 2 foto" },
+        { key: "denahLokasi", label: "Denah Lokasi", required: true },
+        { key: "izinUsahaPerikanan", label: "Izin Usaha Perikanan (IUP)", required: true },
+        { key: "kelayakanBudidaya", label: "Surat Kelayakan Tempat Budidaya / Surat Kelayakan Armada", required: true },
+        { key: "izinPemanfaatanRuangLaut", label: "Izin Pemanfaatan Ruang Laut", required: false, description: "Opsional - untuk kegiatan di perairan laut" },
+      ];
+    }
+
+    return [];
+  };
+
+  const docRequirements = getDocRequirements();
 
   const steps = [
     { number: 1, title: "Formulir Permohonan" },
@@ -1753,258 +1860,7 @@ export default function AjukanPermohonanPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                {isNonBangunanIzin() ? (
-                  <div className="space-y-6">
-                    {/* Form SKDU - Wajib */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-base font-semibold text-slate-900">Surat Keterangan Domisili (SKD) dari Desa/Kelurahan *</Label>
-                        <span className="text-red-500"></span>
-                      </div>
-                      <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
-                        <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
-                        <Label htmlFor="skdu-upload" className="cursor-pointer">
-                          <span className="text-emerald-600 font-medium hover:text-emerald-700">
-                            Klik untuk upload atau drag & drop
-                          </span>
-                          <p className="text-sm text-slate-500 mt-2">
-                            Format: PDF, JPG, PNG (Maks. 5MB)
-                          </p>
-                        </Label>
-                        <Input
-                          id="skdu-upload"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const uploadedFile: UploadedFile = {
-                                name: file.name,
-                                file: file,
-                              };
-                              if (file.type.startsWith("image/")) {
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                  uploadedFile.preview = e.target?.result as string;
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                              setSkduFile(uploadedFile);
-                            }
-                          }}
-                          className="hidden"
-                          required
-                        />
-                      </div>
-                      {skduFile && (
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <FileText className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                            <span className="text-sm text-slate-700 truncate">{skduFile.name}</span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSkduFile(null)}
-                            className="flex-shrink-0"
-                          >
-                            <X className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Form Foto Lokasi Usaha - Wajib */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-base font-semibold text-slate-900">Foto Lokasi (Tampak Luar & Dalam) *</Label>
-                        <span className="text-red-500"></span>
-                      </div>
-                      <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
-                        <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
-                        <Label htmlFor="foto-lokasi-upload" className="cursor-pointer">
-                          <span className="text-emerald-600 font-medium hover:text-emerald-700">
-                            Klik untuk upload atau drag & drop
-                          </span>
-                          <p className="text-sm text-slate-500 mt-2">
-                            Format: JPG, PNG (Maks. 5MB per file) - Upload minimal 2 foto (luar & dalam)
-                          </p>
-                        </Label>
-                        <Input
-                          id="foto-lokasi-upload"
-                          type="file"
-                          multiple
-                          accept=".jpg,.jpeg,.png"
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files || []);
-                            files.forEach((file) => {
-                              const uploadedFile: UploadedFile = {
-                                name: file.name,
-                                file: file,
-                              };
-                              if (file.type.startsWith("image/")) {
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                  uploadedFile.preview = e.target?.result as string;
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                              setFotoLokasiUsahaFile((prev) => [...prev, uploadedFile]);
-                            });
-                          }}
-                          className="hidden"
-                        />
-                      </div>
-                      {fotoLokasiUsahaFile.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-slate-900 text-sm">File yang diupload:</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {fotoLokasiUsahaFile.map((file, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200"
-                              >
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  <FileText className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                                  <span className="text-sm text-slate-700 truncate">{file.name}</span>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setFotoLokasiUsahaFile((prev) => prev.filter((_, i) => i !== index))}
-                                  className="flex-shrink-0"
-                                >
-                                  <X className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Form Denah Lokasi Usaha - Wajib */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-base font-semibold text-slate-900">Denah Lokasi *</Label>
-                        <span className="text-red-500"></span>
-                      </div>
-                      <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
-                        <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
-                        <Label htmlFor="denah-lokasi-upload" className="cursor-pointer">
-                          <span className="text-emerald-600 font-medium hover:text-emerald-700">
-                            Klik untuk upload atau drag & drop
-                          </span>
-                          <p className="text-sm text-slate-500 mt-2">
-                            Format: PDF, JPG, PNG (Maks. 5MB)
-                          </p>
-                        </Label>
-                        <Input
-                          id="denah-lokasi-upload"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const uploadedFile: UploadedFile = {
-                                name: file.name,
-                                file: file,
-                              };
-                              if (file.type.startsWith("image/")) {
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                  uploadedFile.preview = e.target?.result as string;
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                              setDenahLokasiUsahaFile(uploadedFile);
-                            }
-                          }}
-                          className="hidden"
-                          required
-                        />
-                      </div>
-                      {denahLokasiUsahaFile && (
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <FileText className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                            <span className="text-sm text-slate-700 truncate">{denahLokasiUsahaFile.name}</span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDenahLokasiUsahaFile(null)}
-                            className="flex-shrink-0"
-                          >
-                            <X className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Form Surat Kuasa - Opsional */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-base font-semibold text-slate-900">Surat Kuasa</Label>
-                        <span className="text-slate-500 text-sm">Opsional (jika diwakilkan)</span>
-                      </div>
-                      <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
-                        <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
-                        <Label htmlFor="surat-kuasa-pemohon-upload" className="cursor-pointer">
-                          <span className="text-emerald-600 font-medium hover:text-emerald-700">
-                            Klik untuk upload atau drag & drop
-                          </span>
-                          <p className="text-sm text-slate-500 mt-2">
-                            Format: PDF, JPG, PNG (Maks. 5MB)
-                          </p>
-                        </Label>
-                        <Input
-                          id="surat-kuasa-pemohon-upload"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const uploadedFile: UploadedFile = {
-                                name: file.name,
-                                file: file,
-                              };
-                              if (file.type.startsWith("image/")) {
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                  uploadedFile.preview = e.target?.result as string;
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                              setSuratKuasaPemohonFile(uploadedFile);
-                            }
-                          }}
-                          className="hidden"
-                        />
-                      </div>
-                      {suratKuasaPemohonFile && (
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <FileText className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                            <span className="text-sm text-slate-700 truncate">{suratKuasaPemohonFile.name}</span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSuratKuasaPemohonFile(null)}
-                            className="flex-shrink-0"
-                          >
-                            <X className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : isBangunanIzin() ? (
+                {isBangunanIzin() ? (
                   <div className="space-y-6">
                     {/* Dokumen Tanah */}
                     <div className="space-y-4 pt-4 border-t">
@@ -2017,7 +1873,6 @@ export default function AjukanPermohonanPage() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <Label className="text-base font-semibold text-slate-900">Sertifikat Tanah (SHM / HGB) *</Label>
-                          <span className="text-red-500"></span>
                         </div>
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
                           <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
@@ -2136,7 +1991,6 @@ export default function AjukanPermohonanPage() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <Label className="text-base font-semibold text-slate-900">Surat Keterangan Tidak Dalam Sengketa *</Label>
-                          <span className="text-red-500"></span>
                         </div>
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
                           <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
@@ -2204,7 +2058,6 @@ export default function AjukanPermohonanPage() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <Label className="text-base font-semibold text-slate-900">Gambar Teknis / Blueprint: Denah *</Label>
-                          <span className="text-red-500"></span>
                         </div>
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
                           <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
@@ -2264,7 +2117,6 @@ export default function AjukanPermohonanPage() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <Label className="text-base font-semibold text-slate-900">Foto Lokasi Tanah dan Bangunan *</Label>
-                          <span className="text-red-500"></span>
                         </div>
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
                           <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
@@ -2334,7 +2186,6 @@ export default function AjukanPermohonanPage() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <Label className="text-base font-semibold text-slate-900">Surat Pernyataan Kesesuaian Fungsi Bangunan *</Label>
-                          <span className="text-red-500"></span>
                         </div>
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
                           <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
@@ -2391,6 +2242,129 @@ export default function AjukanPermohonanPage() {
                       </div>
                     </div>
                   </div>
+                ) : isNonBangunanIzin() ? (
+                  <div className="space-y-6">
+                    {/* Dynamic document requirements per izin type */}
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-emerald-800 font-medium">
+                        Jenis Izin: <span className="font-bold">{formData.jenisIzin}</span>
+                      </p>
+                      <p className="text-xs text-emerald-600 mt-1">
+                        Silakan upload dokumen persyaratan sesuai jenis izin yang dipilih
+                      </p>
+                    </div>
+
+                    {docRequirements.map((doc) => (
+                      <div className="space-y-3" key={doc.key}>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-base font-semibold text-slate-900">
+                            {doc.label} {doc.required ? "*" : ""}
+                          </Label>
+                          {!doc.required && (
+                            <span className="text-slate-500 text-sm">Opsional</span>
+                          )}
+                        </div>
+                        {doc.description && (
+                          <p className="text-xs text-slate-500 -mt-1">{doc.description}</p>
+                        )}
+                        <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
+                          <Upload className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+                          <Label htmlFor={`doc-${doc.key}-upload`} className="cursor-pointer">
+                            <span className="text-emerald-600 font-medium hover:text-emerald-700">
+                              Klik untuk upload atau drag & drop
+                            </span>
+                            <p className="text-sm text-slate-500 mt-2">
+                              Format: PDF, JPG, PNG (Maks. 5MB)
+                              {doc.multiple ? " - Bisa upload multiple file" : ""}
+                            </p>
+                          </Label>
+                          <Input
+                            id={`doc-${doc.key}-upload`}
+                            type="file"
+                            multiple={doc.multiple}
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (doc.multiple) {
+                                const uploadedFiles: UploadedFile[] = files.map((file) => {
+                                  const uf: UploadedFile = { name: file.name, file };
+                                  if (file.type.startsWith("image/")) {
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                      uf.preview = ev.target?.result as string;
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                  return uf;
+                                });
+                                addDokumenMulti(doc.key, uploadedFiles);
+                              } else {
+                                const file = files[0];
+                                if (file) {
+                                  const uf: UploadedFile = { name: file.name, file };
+                                  if (file.type.startsWith("image/")) {
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => {
+                                      uf.preview = ev.target?.result as string;
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                  setDokumen(doc.key, uf);
+                                }
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </div>
+                        {/* Show single file */}
+                        {!doc.multiple && dokumenIzin[doc.key] && (
+                          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <FileText className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                              <span className="text-sm text-slate-700 truncate">{dokumenIzin[doc.key]!.name}</span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDokumen(doc.key, null)}
+                              className="flex-shrink-0"
+                            >
+                              <X className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        )}
+                        {/* Show multiple files */}
+                        {doc.multiple && (dokumenIzinMulti[doc.key]?.length || 0) > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-slate-900 text-sm">File yang diupload:</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {(dokumenIzinMulti[doc.key] || []).map((file: UploadedFile, index: number) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200"
+                                >
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <FileText className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                                    <span className="text-sm text-slate-700 truncate">{file.name}</span>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeDokumenMulti(doc.key, index)}
+                                    className="flex-shrink-0"
+                                  >
+                                    <X className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 ) : null}
 
                 <div className="flex justify-between pt-4">
@@ -2402,7 +2376,13 @@ export default function AjukanPermohonanPage() {
                     type="submit"
                     disabled={
                       isSubmitting || 
-                      (isNonBangunanIzin() && (!skduFile || fotoLokasiUsahaFile.length < 2 || !denahLokasiUsahaFile)) ||
+                      (isNonBangunanIzin() && docRequirements.some(doc => {
+                        if (!doc.required) return false;
+                        if (doc.multiple) {
+                          return (dokumenIzinMulti[doc.key]?.length || 0) === 0;
+                        }
+                        return !dokumenIzin[doc.key];
+                      })) ||
                       (isBangunanIzin() && (
                         !sertifikatTanahFile || 
                         !suratKeteranganTidakSengketaFile || 
