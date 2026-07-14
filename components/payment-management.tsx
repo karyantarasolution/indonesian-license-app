@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Plus, Edit, Trash2, Search, CreditCard, X } from "lucide-react"
+import { Plus, Edit, Trash2, Search, CreditCard, X, Eye } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface Payment {
@@ -141,7 +141,7 @@ function PaymentForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="dibayar">Dibayar</SelectItem>
+              <SelectItem value="dibayar">Menunggu Verifikasi</SelectItem>
               <SelectItem value="lunas">Lunas</SelectItem>
               <SelectItem value="batal">Batal</SelectItem>
             </SelectContent>
@@ -190,7 +190,13 @@ function statusBadge(status: string) {
     lunas: "bg-green-100 text-green-800",
     batal: "bg-red-100 text-red-800",
   }
-  return colors[status] || "bg-gray-100 text-gray-800"
+  const labels: Record<string, string> = {
+    pending: "Pending",
+    dibayar: "Menunggu Verifikasi",
+    lunas: "Lunas",
+    batal: "Batal",
+  }
+  return { className: colors[status] || "bg-gray-100 text-gray-800", label: labels[status] || status }
 }
 
 export function PaymentManagement() {
@@ -381,6 +387,7 @@ export function PaymentManagement() {
                 <TableHead>Jumlah</TableHead>
                 <TableHead>Metode</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Bukti</TableHead>
                 <TableHead>Tracking</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
@@ -388,11 +395,11 @@ export function PaymentManagement() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">Memuat data...</TableCell>
+                  <TableCell colSpan={8} className="text-center py-8">Memuat data...</TableCell>
                 </TableRow>
               ) : filteredPayments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">Tidak ada data pembayaran</TableCell>
+                  <TableCell colSpan={8} className="text-center py-8">Tidak ada data pembayaran</TableCell>
                 </TableRow>
               ) : (
                 filteredPayments.map((payment, index) => (
@@ -402,13 +409,52 @@ export function PaymentManagement() {
                     <TableCell>{formatCurrency(Number(payment.jumlah))}</TableCell>
                     <TableCell className="capitalize">{payment.metode_pembayaran}</TableCell>
                     <TableCell>
-                      <Badge className={statusBadge(payment.status_pembayaran)}>
-                        {payment.status_pembayaran}
+                      <Badge className={statusBadge(payment.status_pembayaran).className}>
+                        {statusBadge(payment.status_pembayaran).label}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {payment.bukti_pembayaran ? (
+                        <a
+                          href={payment.bukti_pembayaran}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Lihat
+                        </a>
+                      ) : (
+                        <span className="text-sm text-slate-400">-</span>
+                      )}
                     </TableCell>
                     <TableCell>{payment.tracking_code || "-"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
+                        {payment.status_pembayaran === "dibayar" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/mysql/payments/${payment.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ status_pembayaran: "lunas" }),
+                                });
+                                const result = await res.json();
+                                if (!result.success) throw new Error(result.error);
+                                toast({ title: "Berhasil", description: "Pembayaran diverifikasi sebagai lunas" });
+                                loadPayments();
+                              } catch (error) {
+                                toast({ title: "Error", description: "Gagal memverifikasi pembayaran", variant: "destructive" });
+                              }
+                            }}
+                          >
+                            Verifikasi
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => { setEditingPayment(payment); setIsDialogOpen(true) }}>
                           <Edit className="h-4 w-4" />
                         </Button>

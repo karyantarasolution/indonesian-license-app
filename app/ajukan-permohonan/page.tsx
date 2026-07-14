@@ -354,19 +354,21 @@ export default function AjukanPermohonanPage() {
 
       // Buat payment record
       try {
-        await fetch('/api/mysql/payments', {
+        const payRes = await fetch('/api/mysql/payments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            licenseId: newLicense.id,
-            trackingCode: tracking,
-            pemohonNama: formData.jenisPemohon === "perorangan" ? formData.namaPemohon : formData.penanggungJawab,
+            license_id: newLicense.id,
+            tracking_code: tracking,
+            pemohon_nama: formData.jenisPemohon === "perorangan" ? formData.namaPemohon : formData.penanggungJawab,
             jumlah: 0,
-            metodePembayaran: "transfer",
-            statusPembayaran: "pending",
+            metode_pembayaran: "transfer",
+            status_pembayaran: "pending",
             keterangan: "Pembayaran retribusi izin"
           })
         });
+        const payResult = await payRes.json();
+        console.log("Payment creation result:", payResult);
       } catch (payError) {
         console.error("Failed to create payment record", payError);
       }

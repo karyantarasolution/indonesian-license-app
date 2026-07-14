@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS payments (
   pemohon_nama VARCHAR(255) NOT NULL,
   jumlah DECIMAL(15,2) NOT NULL DEFAULT 0,
   metode_pembayaran ENUM('transfer', 'tunai', 'va', 'qris') DEFAULT 'transfer',
-  status_pembayaran ENUM('pending', 'lunas', 'gagal', 'kadaluarsa') DEFAULT 'pending',
+  status_pembayaran ENUM('pending', 'dibayar', 'lunas', 'batal', 'gagal', 'kadaluarsa') DEFAULT 'pending',
   tanggal_pembayaran DATE NULL,
   bukti_pembayaran VARCHAR(500) NULL,
   keterangan TEXT NULL,

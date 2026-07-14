@@ -125,59 +125,110 @@ export async function exportSLAPerformanceHtml(data: License[], filename = "lapo
   await exportHtmlToPDF(html, filename, "landscape");
 }
 
-// 2. Laporan Status Perizinan
-export async function exportStatusPerizinanHtml(data: License[], overdueLicenses: License[], filename = "laporan-status-perizinan") {
-  const tableRows = data.map((license, index) => {
-    const tanggalMasuk = license.permohonanMasuk ? new Date(license.permohonanMasuk) : null;
-    const durasiProses = tanggalMasuk ? Math.floor((new Date().getTime() - tanggalMasuk.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-    const estimasiSelesai = tanggalMasuk ? new Date(tanggalMasuk.getTime() + 14 * 24 * 60 * 60 * 1000) : null;
-    
-    let statusText = license.status || '-';
-    if (license.verificationStatus === 'rejected') statusText = 'Ditolak';
-    else if (license.status === 'draft') statusText = 'Draft';
-    else if (license.status === 'proses') statusText = 'Dalam Proses';
-    else if (license.status === 'rekomendasi') statusText = 'Menunggu Rekomendasi';
-    else if (license.status === 'selesai') statusText = 'Selesai';
-
-    return `
-      <tr>
-        <td style="text-align: center;">${index + 1}</td>
-        <td>${license.namaIzin || '-'}</td>
-        <td>${license.jenisIzin || '-'}</td>
-        <td>${license.sektor || '-'}</td>
-        <td style="text-align: center; font-weight: bold;">${statusText.toUpperCase()}</td>
-        <td style="text-align: center;">${tanggalMasuk ? format(tanggalMasuk, 'dd/MM/yyyy') : '-'}</td>
-        <td style="text-align: center;">${durasiProses} hari</td>
-        <td style="text-align: center;">${estimasiSelesai ? format(estimasiSelesai, 'dd/MM/yyyy') : '-'}</td>
-      </tr>
-    `;
-  }).join('');
+// 7. Sertifikat Perizinan
+export async function exportSertifikatPerizinan(license: License, filename = "sertifikat-perizinan") {
+  const tanggalTerbit = license.tglTerbitIzin ? format(new Date(license.tglTerbitIzin), 'dd MMMM yyyy') : '-';
+  const tanggalPenyerahan = license.tglPenyerahanIzin ? format(new Date(license.tglPenyerahanIzin), 'dd MMMM yyyy') : '-';
 
   const html = `
-    ${getTableStyle()}
-    ${getKopSuratHTML("DETAIL LAPORAN STATUS PERIZINAN", "Overview lengkap status semua perizinan dengan timeline progress")}
-    <p style="text-align: center; font-size: 11px; margin-top: -10px; margin-bottom: 20px;">Tanggal Laporan: ${format(new Date(), 'dd MMMM yyyy')}</p>
-    
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Nama Izin</th>
-          <th>Jenis Izin</th>
-          <th>Sektor</th>
-          <th>Status Saat Ini</th>
-          <th>Tanggal Masuk</th>
-          <th>Durasi Proses</th>
-          <th>Estimasi Selesai</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${tableRows}
-      </tbody>
-    </table>
+    <style>
+      @page { size: A4 portrait; margin: 20mm; }
+      body { font-family: 'Times New Roman', Times, serif; color: #000; line-height: 1.6; }
+      .container { max-width: 700px; margin: 0 auto; padding: 40px; }
+      .header { text-align: center; border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 30px; }
+      .header img { width: 80px; height: auto; margin-bottom: 10px; }
+      .header h2 { margin: 0; font-size: 16px; letter-spacing: 1px; }
+      .header h3 { margin: 5px 0; font-size: 14px; font-weight: normal; }
+      .title { text-align: center; margin: 30px 0; }
+      .title h1 { font-size: 22px; text-decoration: underline; margin: 0; letter-spacing: 2px; }
+      .title .nomor { font-size: 13px; margin-top: 5px; color: #333; }
+      .body-content { font-size: 14px; margin: 25px 0; text-align: justify; }
+      .body-content p { margin: 10px 0; text-indent: 30px; }
+      .detail-table { width: 100%; margin: 20px 0; font-size: 13px; }
+      .detail-table td { padding: 5px 10px; vertical-align: top; }
+      .detail-table td:first-child { width: 200px; font-weight: bold; }
+      .signature { margin-top: 60px; display: flex; justify-content: flex-end; }
+      .signature-block { text-align: center; width: 250px; }
+      .signature-block .name { font-weight: bold; text-decoration: underline; }
+      .signature-block .nip { font-size: 12px; color: #555; }
+    </style>
+
+    <div class="container">
+      <div class="header">
+        <img src="/logo2.png" alt="Logo DPMPTSP" style="width: 80px; height: auto;" />
+        <h2>PEMERINTAH KABUPATEN TAPIN</h2>
+        <h3>DINAS PENANAMAN MODAL DAN PELAYANAN TERPADU SATU PINTU</h3>
+        <h3>(DPMPTSP) KABUPATEN TAPIN</h3>
+      </div>
+
+      <div class="title">
+        <h1>SERTIFIKAT PERIZINAN</h1>
+        <div class="nomor">Nomor: ${license.trackingCode || '-'}/SRT/${new Date().getFullYear()}/DPMPTSP</div>
+      </div>
+
+      <div class="body-content">
+        <p>
+          DPMPTSP Kabupaten Tapin dengan ini menerbitkan Sertifikat Perizinan kepada:
+        </p>
+
+        <table class="detail-table">
+          <tr>
+            <td>Nama Pemohon</td>
+            <td>: ${license.pemohonNama || '-'}</td>
+          </tr>
+          <tr>
+            <td>Jenis Izin</td>
+            <td>: ${license.jenisIzin || '-'}</td>
+          </tr>
+          <tr>
+            <td>Nama Izin</td>
+            <td>: ${license.namaIzin || '-'}</td>
+          </tr>
+          <tr>
+            <td>Lokasi / Alamat</td>
+            <td>: ${license.alamat || license.lokasiIzin || '-'}</td>
+          </tr>
+          <tr>
+            <td>Sektor</td>
+            <td>: ${license.sektor || '-'}</td>
+          </tr>
+          <tr>
+            <td>Tanggal Terbit</td>
+            <td>: ${tanggalTerbit}</td>
+          </tr>
+          <tr>
+            <td>Tanggal Penyerahan</td>
+            <td>: ${tanggalPenyerahan}</td>
+          </tr>
+          <tr>
+            <td>Kode Tracking</td>
+            <td>: ${license.trackingCode || '-'}</td>
+          </tr>
+        </table>
+
+        <p>
+          Sertifikat perizinan ini diterbitkan berdasarkan ketentuan peraturan perundang-undangan yang berlaku di Kabupaten Tapin dan berlaku sejak tanggal penerbitan.
+        </p>
+
+        <p>
+          Demikian sertifikat ini dikeluarkan dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+        </p>
+      </div>
+
+      <div class="signature">
+        <div class="signature-block">
+          <p style="margin-bottom: 5px;">Rantau, ${tanggalPenyerahan !== '-' ? tanggalPenyerahan : tanggalTerbit}</p>
+          <p style="margin-bottom: 60px;">Kepala DPMPTSP Kabupaten Tapin</p>
+          <div>
+            <p class="name">_________________________</p>
+            <p class="nip">NIP. _____________________</p>
+          </div>
+        </div>
+      </div>
+    </div>
   `;
 
-  await exportHtmlToPDF(html, filename, "landscape");
+  await exportHtmlToPDF(html, filename, "portrait");
 }
 
 // 3. Laporan Analisis Sektor

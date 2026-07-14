@@ -17,20 +17,23 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { license_id, tracking_code, pemohon_nama, jumlah, metode_pembayaran, tanggal_pembayaran, bukti_pembayaran, keterangan } = body;
+    const { license_id, tracking_code, pemohon_nama, jumlah, metode_pembayaran, status_pembayaran, tanggal_pembayaran, bukti_pembayaran, keterangan } = body;
 
-    if (!pemohon_nama || !jumlah) {
-      return NextResponse.json({ success: false, error: 'Nama pemohon dan jumlah wajib diisi' }, { status: 400 });
+    if (!pemohon_nama) {
+      return NextResponse.json({ success: false, error: 'Nama pemohon wajib diisi' }, { status: 400 });
     }
 
     const pool = getMySQLPool();
     const id = crypto.randomUUID();
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
+    const validStatuses = ['pending', 'dibayar', 'lunas', 'batal'];
+    const finalStatus = validStatuses.includes(status_pembayaran) ? status_pembayaran : 'pending';
+
     await pool.execute(
       `INSERT INTO payments (id, license_id, tracking_code, pemohon_nama, jumlah, metode_pembayaran, status_pembayaran, tanggal_pembayaran, bukti_pembayaran, keterangan, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
-      [id, license_id || null, tracking_code || null, pemohon_nama, jumlah, metode_pembayaran || 'transfer', tanggal_pembayaran || null, bukti_pembayaran || null, keterangan || null, now, now]
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, license_id || null, tracking_code || null, pemohon_nama, jumlah || 0, metode_pembayaran || 'transfer', finalStatus, tanggal_pembayaran || null, bukti_pembayaran || null, keterangan || null, now, now]
     );
 
     const [rows] = await pool.execute('SELECT * FROM payments WHERE id = ?', [id]);

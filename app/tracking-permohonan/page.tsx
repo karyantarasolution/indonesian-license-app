@@ -25,6 +25,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { License, useLicenses } from "@/contexts/license-context";
+import { Upload, Eye, Download } from "lucide-react";
+import { exportSertifikatPerizinan } from "@/lib/html2pdf-export";
 
 export default function TrackingPermohonanPage() {
   const { toast } = useToast();
@@ -37,6 +39,8 @@ export default function TrackingPermohonanPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [payment, setPayment] = useState<any>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [uploadingBukti, setUploadingBukti] = useState(false);
+  const [showBuktiPreview, setShowBuktiPreview] = useState(false);
 
   // Debug: Log trackingCode changes
   useEffect(() => {
@@ -250,6 +254,43 @@ export default function TrackingPermohonanPage() {
     } catch (err) {
       console.error("Error deleting file:", err);
       toast({ title: "Error", description: "Gagal menghapus dokumen", variant: "destructive" });
+    }
+  };
+
+  const handleUploadBuktiPembayaran = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !payment) return;
+    const file = e.target.files[0];
+    setUploadingBukti(true);
+
+    try {
+      // Upload file ke server
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      const uploadResult = await uploadRes.json();
+      if (!uploadResult.success) throw new Error(uploadResult.error || 'Gagal upload file');
+
+      // Update payment record dengan bukti pembayaran
+      const updateRes = await fetch(`/api/mysql/payments/${payment.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bukti_pembayaran: uploadResult.data.url,
+          status_pembayaran: 'dibayar',
+          tanggal_pembayaran: new Date().toISOString().split('T')[0],
+        }),
+      });
+      const updateResult = await updateRes.json();
+      if (!updateResult.success) throw new Error(updateResult.error || 'Gagal update pembayaran');
+
+      setPayment({ ...payment, bukti_pembayaran: uploadResult.data.url, status_pembayaran: 'dibayar' });
+      toast({ title: "Berhasil", description: "Bukti pembayaran berhasil diunggah. Menunggu verifikasi admin." });
+    } catch (err) {
+      console.error("Error uploading bukti:", err);
+      toast({ title: "Error", description: "Gagal mengunggah bukti pembayaran", variant: "destructive" });
+    } finally {
+      setUploadingBukti(false);
+      e.target.value = '';
     }
   };
 
@@ -628,16 +669,18 @@ export default function TrackingPermohonanPage() {
                               "bg-yellow-500 text-white"
                             }>
                               {payment.status_pembayaran === "lunas" ? "Lunas" :
-                               payment.status_pembayaran === "dibayar" ? "Dibayar" :
-                               payment.status_pembayaran === "batal" ? "Batal" : "Menunggu Pembayaran"}
+                               payment.status_pembayaran === "dibayar" ? "Menunggu Verifikasi" :
+                               payment.status_pembayaran === "batal" ? "Dibatalkan" : "Menunggu Pembayaran"}
                             </Badge>
                           </div>
-                          <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-emerald-200">
-                            <span className="text-sm font-medium text-slate-700">Jumlah</span>
-                            <span className="text-lg font-bold text-emerald-700">
-                              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(payment.jumlah)}
-                            </span>
-                          </div>
+                          {payment.jumlah > 0 && (
+                            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-emerald-200">
+                              <span className="text-sm font-medium text-slate-700">Jumlah</span>
+                              <span className="text-lg font-bold text-emerald-700">
+                                {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(payment.jumlah)}
+                              </span>
+                            </div>
+                          )}
                           {payment.metode_pembayaran && (
                             <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-emerald-200">
                               <span className="text-sm font-medium text-slate-700">Metode</span>
@@ -650,11 +693,61 @@ export default function TrackingPermohonanPage() {
                               <p className="text-sm font-medium text-green-800">Pembayaran Lunas</p>
                             </div>
                           )}
+                          {payment.status_pembayaran === "dibayar" && (
+                            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-300 text-center">
+                              <Clock className="h-5 w-5 text-blue-600 mx-auto mb-1" />
+                              <p className="text-sm font-medium text-blue-800">Bukti pembayaran sudah diunggah. Menunggu verifikasi admin.</p>
+                            </div>
+                          )}
+                          {payment.status_pembayaran === "batal" && (
+                            <div className="mt-2 p-3 bg-red-50 rounded-lg border border-red-300 text-center">
+                              <XCircle className="h-5 w-5 text-red-600 mx-auto mb-1" />
+                              <p className="text-sm font-medium text-red-800">Pembayaran dibatalkan. Silakan hubungi admin.</p>
+                            </div>
+                          )}
                           {payment.status_pembayaran === "pending" && (
-                            <div className="mt-2 p-3 bg-yellow-50 rounded-lg border border-yellow-300">
-                              <p className="text-sm text-yellow-800 text-center">
-                                Silakan lakukan pembayaran ke rekening di bawah ini
-                              </p>
+                            <div className="space-y-3">
+                              <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-300">
+                                <p className="text-sm text-yellow-800 text-center mb-3">
+                                  Silakan lakukan pembayaran ke rekening di bawah ini, lalu upload bukti pembayaran:
+                                </p>
+                                <div className="space-y-1 text-sm bg-white p-2 rounded">
+                                  <p><span className="font-medium">BNI:</span> 1234567890 a.n. DPMPTSP Tapin</p>
+                                  <p><span className="font-medium">VA BNI:</span> 9881234567890</p>
+                                  <p><span className="font-medium">VA Mandiri:</span> 891234567890</p>
+                                </div>
+                              </div>
+                              <div className="border-2 border-dashed border-emerald-300 rounded-lg p-4 text-center hover:border-emerald-500 transition-colors bg-white">
+                                <Upload className="h-8 w-8 mx-auto text-emerald-400 mb-2" />
+                                <label htmlFor="bukti-pembayaran-upload" className="cursor-pointer">
+                                  <span className="text-sm text-emerald-600 font-medium hover:text-emerald-700">
+                                    {uploadingBukti ? "Mengunggah..." : "Klik untuk upload bukti pembayaran"}
+                                  </span>
+                                  <p className="text-xs text-slate-500 mt-1">Format: JPG, PNG, PDF (Maks. 5MB)</p>
+                                </label>
+                                <input
+                                  id="bukti-pembayaran-upload"
+                                  type="file"
+                                  accept=".jpg,.jpeg,.png,.pdf"
+                                  className="hidden"
+                                  onChange={handleUploadBuktiPembayaran}
+                                  disabled={uploadingBukti}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {payment.bukti_pembayaran && (
+                            <div className="mt-2 p-3 bg-white rounded-lg border border-emerald-200">
+                              <p className="text-sm font-medium text-slate-700 mb-2">Bukti Pembayaran:</p>
+                              <a
+                                href={payment.bukti_pembayaran}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-800"
+                              >
+                                <Eye className="h-4 w-4" />
+                                Lihat Bukti Pembayaran
+                              </a>
                             </div>
                           )}
                         </div>
@@ -698,14 +791,24 @@ export default function TrackingPermohonanPage() {
                           </div>
                           <Button
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                            onClick={() => {
-                              toast({
-                                title: "Sertifikat",
-                                description: "Sertifikat perizinan akan dikirim ke email Anda atau dapat diambil di kantor DPMPTSP.",
-                              });
+                            onClick={async () => {
+                              try {
+                                await exportSertifikatPerizinan(license);
+                                toast({
+                                  title: "Berhasil",
+                                  description: "Sertifikat perizinan berhasil diunduh",
+                                });
+                              } catch (err) {
+                                console.error("Error generating certificate:", err);
+                                toast({
+                                  title: "Error",
+                                  description: "Gagal mengunduh sertifikat. Silakan coba lagi.",
+                                  variant: "destructive",
+                                });
+                              }
                             }}
                           >
-                            <FileText className="h-4 w-4 mr-2" />
+                            <Download className="h-4 w-4 mr-2" />
                             Unduh Sertifikat
                           </Button>
                         </div>
