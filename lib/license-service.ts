@@ -212,11 +212,19 @@ export class LicenseService {
       // Fallback to localStorage
       const savedLicenses = localStorage.getItem('licenses')
       const licenses = savedLicenses ? JSON.parse(savedLicenses) : []
-      const updatedLicenses = licenses.map((license: License) =>
-        license.id === id 
+      const updatedLicenses = licenses.map((license: License) => {
+        let merged = license.id === id 
           ? { ...license, ...updates, updatedAt: new Date().toISOString().split('T')[0] }
-          : license
-      )
+          : license;
+        // Auto-set berlakuSampai = tglPenyerahan + 6 bulan when status becomes selesai
+        if (merged.id === id && updates.status === 'selesai' && merged.tglPenyerahanIzin && !merged.berlakuSampai) {
+          const penyerahanDate = new Date(merged.tglPenyerahanIzin);
+          const berlakuDate = new Date(penyerahanDate);
+          berlakuDate.setMonth(berlakuDate.getMonth() + 6);
+          merged = { ...merged, berlakuSampai: berlakuDate.toISOString().split('T')[0] };
+        }
+        return merged;
+      })
       localStorage.setItem('licenses', JSON.stringify(updatedLicenses))
       const foundLicenseLocal = updatedLicenses.find((license: License) => license.id === id) || null
       

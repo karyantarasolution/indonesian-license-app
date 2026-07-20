@@ -47,9 +47,9 @@ export default function TrackingPermohonanPage() {
     console.log("Tracking code changed:", trackingCode, "trimmed length:", trackingCode.trim().length, "isDisabled:", isLoading || !trackingCode || trackingCode.trim().length === 0);
   }, [trackingCode, isLoading]);
 
-  // Fetch payment data when license is loaded
+  // Fetch payment data when license is loaded (for all non-draft/ditolak statuses)
   useEffect(() => {
-    if (license && license.trackingCode && license.status === "selesai" && license.verificationStatus !== "rejected") {
+    if (license && license.trackingCode && license.status !== "draft" && license.status !== "ditolak") {
       setPaymentLoading(true);
       fetch(`/api/mysql/payments/tracking/${encodeURIComponent(license.trackingCode)}`)
         .then(res => res.json())
@@ -646,8 +646,8 @@ export default function TrackingPermohonanPage() {
 
               {/* Payment & Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Dynamic Payment Section - shows when status is selesai */}
-                {license.status === "selesai" && license.verificationStatus !== "rejected" && (
+                {/* Dynamic Payment Section - shows for all active statuses */}
+                {license.status !== "draft" && license.status !== "ditolak" && license.verificationStatus !== "rejected" && (
                   <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
@@ -656,6 +656,15 @@ export default function TrackingPermohonanPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
+                      {license.status === "terlambat" && (
+                        <div className="mb-3 p-3 bg-red-50 rounded-lg border border-red-300 flex items-start gap-2">
+                          <Clock className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-semibold text-red-800">Peringatan: Proses Terlambat</p>
+                            <p className="text-xs text-red-600 mt-1">Permohonan ini melebihi batas waktu SLA. Silakan segera lakukan pembayaran retribusi izin.</p>
+                          </div>
+                        </div>
+                      )}
                       {paymentLoading ? (
                         <p className="text-sm text-slate-600">Memeriksa status pembayaran...</p>
                       ) : payment ? (
@@ -754,7 +763,13 @@ export default function TrackingPermohonanPage() {
                       ) : (
                         <div className="space-y-3">
                           <p className="text-sm text-slate-600">
-                            Permohonan Anda telah <strong className="text-emerald-700">selesai</strong>. Silakan lakukan pembayaran retribusi izin:
+                            {license.status === "terlambat" ? (
+                              <>Permohonan Anda <strong className="text-red-600">terlambat</strong>. Silakan lakukan pembayaran retribusi izin:</>
+                            ) : license.status === "selesai" ? (
+                              <>Permohonan Anda telah <strong className="text-emerald-700">selesai</strong>. Silakan lakukan pembayaran retribusi izin:</>
+                            ) : (
+                              <>Pembayaran retribusi izin dapat dilakukan setelah permohonan selesai diproses. Berikut informasi rekening:</>
+                            )}
                           </p>
                           <div className="space-y-2 text-sm">
                             <p><span className="font-medium">BNI:</span> 1234567890 a.n. DPMPTSP Tapin</p>
@@ -820,8 +835,8 @@ export default function TrackingPermohonanPage() {
                   </Card>
                 )}
 
-                {/* Fallback Info - when status is not selesai or rejected */}
-                {(license.status !== "selesai" || license.verificationStatus === "rejected") && (
+                {/* Fallback Info - when status is draft or ditolak */}
+                {(license.status === "draft" || license.status === "ditolak" || license.verificationStatus === "rejected") && (
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">

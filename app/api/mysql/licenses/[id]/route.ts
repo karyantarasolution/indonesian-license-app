@@ -56,7 +56,8 @@ export async function PUT(
       'tgl_rekomendasi_izin_diterima', 'tgl_rekomendasi', 'tgl_terbit_izin',
       'tgl_penyerahan_izin', 'rekomendasi_hari', 'perizinan_hari', 'perizinan',
       'total_sla', 'sektor', 'keterangan', 'status', 'created_by',
-      'files', 'verification_status', 'verification_notes', 'verified_by', 'verified_at'
+      'files', 'verification_status', 'verification_notes', 'verified_by', 'verified_at',
+      'berlaku_sampai'
     ];
     
     // Handle JSON fields
@@ -94,6 +95,22 @@ export async function PUT(
       `UPDATE licenses SET ${updateFields.join(', ')} WHERE id = ?`,
       updateValues
     );
+
+    // Auto-set berlaku_sampai = tglPenyerahan + 6 bulan when status changes to selesai
+    if (body.status === 'selesai' && body.tgl_penyerahan_izin) {
+      try {
+        const penyerahanDate = new Date(body.tgl_penyerahan_izin);
+        const berlakuDate = new Date(penyerahanDate);
+        berlakuDate.setMonth(berlakuDate.getMonth() + 6);
+        const berlakuStr = berlakuDate.toISOString().slice(0, 10);
+        await pool.execute(
+          `UPDATE licenses SET berlaku_sampai = ? WHERE id = ? AND berlaku_sampai IS NULL`,
+          [berlakuStr, params.id]
+        );
+      } catch (e) {
+        console.error('Failed to auto-set berlaku_sampai:', e);
+      }
+    }
     
     // Fetch updated license
     const [rows] = await pool.execute(

@@ -40,7 +40,8 @@ import {
   CreditCard,
   ClipboardList,
   CalendarDays,
-  BarChart3
+  BarChart3,
+  Eye
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -110,6 +111,7 @@ export default function LandingPage() {
   const [searchIzin, setSearchIzin] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [filterJenisIzin, setFilterJenisIzin] = useState("Semua");
   
   // State untuk pembayaran
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -481,9 +483,12 @@ export default function LandingPage() {
       const filtered = result.filter((l) =>
         l.namaIzin.toLowerCase().includes(searchIzin.toLowerCase()) ||
         l.jenisIzin.toLowerCase().includes(searchIzin.toLowerCase()) ||
-        l.sektor.toLowerCase().includes(searchIzin.toLowerCase())
+        l.sektor.toLowerCase().includes(searchIzin.toLowerCase()) ||
+        (l.alamat && l.alamat.toLowerCase().includes(searchIzin.toLowerCase())) ||
+        (l.trackingCode && l.trackingCode.toLowerCase().includes(searchIzin.toLowerCase()))
       );
       setSearchResults(filtered);
+      setFilterJenisIzin("Semua");
     } catch (e) {
       console.error("Search error:", e);
     } finally {
@@ -504,6 +509,19 @@ export default function LandingPage() {
     : filteredKamus;
 
   const kamusKategoriList = ["Semua", ...new Set(kamusList.map((k) => k.kategori))];
+
+  // Cari Izin: unique jenis izin dari data
+  const jenisIzinOptions = useMemo(() => {
+    const types = new Set(licenses.map((l) => l.jenisIzin).filter(Boolean));
+    return ["Semua", ...Array.from(types).sort()];
+  }, [licenses]);
+
+  // Cari Izin: filtered results (search + jenis izin filter)
+  const filteredSearchResults = useMemo(() => {
+    return searchResults.filter((item) =>
+      filterJenisIzin === "Semua" || item.jenisIzin === filterJenisIzin
+    );
+  }, [searchResults, filterJenisIzin]);
   
   // Statistik berita
   const newsStats = useMemo(() => {
@@ -1101,42 +1119,101 @@ export default function LandingPage() {
               </h2>
               <p className="text-slate-600">Cari informasi izin yang telah diajukan dengan kata kunci</p>
             </div>
-            <div className="flex gap-3 max-w-xl mx-auto mb-8">
+            <div className="flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto mb-6">
               <Input
-                placeholder="Cari nama izin, jenis izin, atau sektor..."
+                placeholder="Cari nama izin, jenis izin, sektor, alamat, atau kode tracking..."
                 value={searchIzin}
                 onChange={(e) => setSearchIzin(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearchIzin()}
+                className="flex-1"
               />
               <Button onClick={handleSearchIzin} disabled={isSearching}>
                 <Search className="h-4 w-4 mr-2" />
-                Cari
+                {isSearching ? "Mencari..." : "Cari"}
               </Button>
             </div>
+
             {searchResults.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600">Ditemukan {searchResults.length} hasil:</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {searchResults.slice(0, 9).map((item) => (
-                    <Card key={item.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <FileText className="h-5 w-5 text-emerald-600 mt-1 flex-shrink-0" />
-                          <div>
-                            <p className="font-semibold text-slate-900 text-sm">{item.namaIzin}</p>
-                            <p className="text-xs text-slate-500 mt-1">{item.jenisIzin}</p>
-                            <Badge variant="secondary" className="mt-2 text-xs">{item.status}</Badge>
-                            {item.trackingCode && (
-                              <p className="text-xs text-slate-400 mt-1">Kode: {item.trackingCode}</p>
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <p className="text-sm text-slate-600">
+                    Ditemukan {filteredSearchResults.length} dari {searchResults.length} hasil
+                  </p>
+                  <div className="w-full sm:w-64">
+                    <Select value={filterJenisIzin} onValueChange={setFilterJenisIzin}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Semua Jenis Izin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jenisIzinOptions.map((jenis) => (
+                          <SelectItem key={jenis} value={jenis}>{jenis}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm bg-white">
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-300">
+                        <th className="text-left p-3 text-xs font-bold text-slate-800 border-r border-slate-300 whitespace-nowrap">Kode Tracking</th>
+                        <th className="text-left p-3 text-xs font-bold text-slate-800 border-r border-slate-300 whitespace-nowrap">Jenis Izin</th>
+                        <th className="text-left p-3 text-xs font-bold text-slate-800 border-r border-slate-300 whitespace-nowrap">Nama Izin</th>
+                        <th className="text-left p-3 text-xs font-bold text-slate-800 border-r border-slate-300 whitespace-nowrap">Alamat</th>
+                        <th className="text-left p-3 text-xs font-bold text-slate-800 border-r border-slate-300 whitespace-nowrap">Sektor</th>
+                        <th className="text-center p-3 text-xs font-bold text-slate-800 border-r border-slate-300 whitespace-nowrap">Status</th>
+                        <th className="text-left p-3 text-xs font-bold text-slate-800 border-r border-slate-300 whitespace-nowrap">Keterangan</th>
+                        <th className="text-center p-3 text-xs font-bold text-slate-800 whitespace-nowrap">Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSearchResults.map((item) => (
+                        <tr key={item.id} className="hover:bg-slate-50 transition-colors border-b border-slate-200">
+                          <td className="p-3 border-r border-slate-200 font-mono text-xs font-semibold text-emerald-700">
+                            {item.trackingCode || "-"}
+                          </td>
+                          <td className="p-3 border-r border-slate-200 text-slate-700">{item.jenisIzin || "-"}</td>
+                          <td className="p-3 border-r border-slate-200 font-medium text-slate-900">{item.namaIzin || "-"}</td>
+                          <td className="p-3 border-r border-slate-200 text-slate-600 max-w-[200px] truncate">{item.alamat || item.lokasiIzin || "-"}</td>
+                          <td className="p-3 border-r border-slate-200 text-slate-700">{item.sektor || "-"}</td>
+                          <td className="p-3 border-r border-slate-200 text-center">
+                            {(() => {
+                              const statusMap: Record<string, { label: string; className: string }> = {
+                                draft: { label: "Draft", className: "bg-slate-100 text-slate-700" },
+                                dikirim: { label: "Dikirim", className: "bg-blue-100 text-blue-700" },
+                                proses: { label: "Diproses", className: "bg-yellow-100 text-yellow-700" },
+                                rekomendasi: { label: "Rekomendasi", className: "bg-orange-100 text-orange-700" },
+                                disetujui: { label: "Disetujui", className: "bg-green-100 text-green-700" },
+                                selesai: { label: "Selesai", className: "bg-emerald-100 text-emerald-700" },
+                                terlambat: { label: "Terlambat", className: "bg-red-100 text-red-700" },
+                                ditolak: { label: "Ditolak", className: "bg-red-100 text-red-700" },
+                              };
+                              const cfg = statusMap[item.status] || { label: item.status, className: "bg-slate-100 text-slate-700" };
+                              return <Badge className={`text-xs ${cfg.className}`}>{cfg.label}</Badge>;
+                            })()}
+                          </td>
+                          <td className="p-3 border-r border-slate-200 text-slate-600 max-w-[200px] truncate text-xs">{item.keterangan || "-"}</td>
+                          <td className="p-3 text-center">
+                            {item.trackingCode ? (
+                              <Link href={`/tracking-permohonan`}>
+                                <Button variant="ghost" size="sm" className="h-8 px-2 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50">
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Detail
+                                </Button>
+                              </Link>
+                            ) : (
+                              <span className="text-slate-400 text-xs">-</span>
                             )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
+
             {searchIzin && searchResults.length === 0 && !isSearching && (
               <p className="text-center text-slate-500">Tidak ditemukan izin dengan kata kunci "{searchIzin}"</p>
             )}
