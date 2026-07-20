@@ -378,23 +378,46 @@ export default function LandingPage() {
   // Load testimoni
   useEffect(() => {
     (async () => {
+      const allTestimonials: Testimonial[] = [];
       try {
         const res = await fetch("/api/mysql/testimonials");
         const result = await res.json();
         if (result.success && Array.isArray(result.data)) {
           const published = result.data.filter((t: any) => t.published === true || t.published === 1 || t.published === "1");
-          setTestimonials(published.slice(0, 6));
-          if (published.length > 0) return;
+          allTestimonials.push(...published.slice(0, 6));
         }
       } catch {}
-      // Fallback localStorage
-      const stored = localStorage.getItem("testimonials");
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          const published = data.filter((t: any) => t.published === true);
-          setTestimonials(published.slice(0, 6));
-        } catch {}
+      // Load testimoni from complaints
+      try {
+        const res = await fetch("/api/mysql/complaints");
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data)) {
+          const testimoniComplaints = result.data
+            .filter((c: any) => c.kategori === "testimoni" && (c.status === "selesai" || c.status === "ditindaklanjuti"))
+            .map((c: any) => ({
+              id: c.id,
+              nama: c.nama,
+              jenisIzin: c.tracking_code || "Umum",
+              rating: c.rating || 5,
+              komentar: c.pesan,
+              published: true,
+              createdAt: c.created_at,
+            }));
+          allTestimonials.push(...testimoniComplaints.slice(0, 6 - allTestimonials.length));
+        }
+      } catch {}
+      if (allTestimonials.length > 0) {
+        setTestimonials(allTestimonials);
+      } else {
+        // Fallback localStorage
+        const stored = localStorage.getItem("testimonials");
+        if (stored) {
+          try {
+            const data = JSON.parse(stored);
+            const published = data.filter((t: any) => t.published === true);
+            setTestimonials(published.slice(0, 6));
+          } catch {}
+        }
       }
     })();
   }, []);

@@ -129,16 +129,20 @@ export async function exportSLAPerformanceHtml(data: License[], filename = "lapo
 export async function exportSertifikatPerizinan(license: License, filename = "sertifikat-perizinan") {
   const tanggalTerbit = license.tglTerbitIzin ? format(new Date(license.tglTerbitIzin), 'dd MMMM yyyy') : '-';
   const tanggalPenyerahan = license.tglPenyerahanIzin ? format(new Date(license.tglPenyerahanIzin), 'dd MMMM yyyy') : '-';
+  const berlakuSampai = license.berlakuSampai ? format(new Date(license.berlakuSampai), 'dd MMMM yyyy') : '-';
 
   const html = `
     <style>
       @page { size: A4 portrait; margin: 20mm; }
       body { font-family: 'Times New Roman', Times, serif; color: #000; line-height: 1.6; }
       .container { max-width: 700px; margin: 0 auto; padding: 40px; }
-      .header { text-align: center; border-bottom: 3px double #000; padding-bottom: 15px; margin-bottom: 30px; }
-      .header img { width: 80px; height: auto; margin-bottom: 10px; }
-      .header h2 { margin: 0; font-size: 16px; letter-spacing: 1px; }
-      .header h3 { margin: 5px 0; font-size: 14px; font-weight: normal; }
+      .kop-surat { text-align: center; padding-bottom: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
+      .kop-surat img { width: 80px; height: auto; margin-right: 15px; }
+      .kop-surat-text { flex: 1; }
+      .kop-surat-text h2 { margin: 0; font-size: 16px; letter-spacing: 1px; font-weight: bold; }
+      .kop-surat-text h3 { margin: 4px 0; font-size: 13px; font-weight: normal; }
+      .kop-surat-text p { margin: 2px 0 0; font-size: 11px; color: #444; }
+      .garis-ganda { border-top: 3px double #000; margin-bottom: 25px; }
       .title { text-align: center; margin: 30px 0; }
       .title h1 { font-size: 22px; text-decoration: underline; margin: 0; letter-spacing: 2px; }
       .title .nomor { font-size: 13px; margin-top: 5px; color: #333; }
@@ -154,12 +158,17 @@ export async function exportSertifikatPerizinan(license: License, filename = "se
     </style>
 
     <div class="container">
-      <div class="header">
-        <img src="/logo2.png" alt="Logo DPMPTSP" style="width: 80px; height: auto;" />
-        <h2>PEMERINTAH KABUPATEN TAPIN</h2>
-        <h3>DINAS PENANAMAN MODAL DAN PELAYANAN TERPADU SATU PINTU</h3>
-        <h3>(DPMPTSP) KABUPATEN TAPIN</h3>
+      <div class="kop-surat">
+        <img src="/logo.png" alt="Logo Tapin" style="width: 70px; height: auto;" />
+        <div class="kop-surat-text">
+          <h2>PEMERINTAH KABUPATEN TAPIN</h2>
+          <h3>DINAS PENANAMAN MODAL DAN PELAYANAN<br/>TERPADU SATU PINTU (DPMPTSP)</h3>
+          <h3>KABUPATEN TAPIN</h3>
+          <p>Jl. Akhmad Yani No.1, Rantau, Kab. Tapin, Kalimantan Selatan 71111</p>
+        </div>
+        <img src="/logo2.png" alt="Logo DPMPTSP" style="width: 70px; height: auto; margin-left: 15px;" />
       </div>
+      <div class="garis-ganda"></div>
 
       <div class="title">
         <h1>SERTIFIKAT PERIZINAN</h1>
@@ -201,13 +210,17 @@ export async function exportSertifikatPerizinan(license: License, filename = "se
             <td>: ${tanggalPenyerahan}</td>
           </tr>
           <tr>
+            <td>Tanggal Berlaku Sampai</td>
+            <td>: ${berlakuSampai}</td>
+          </tr>
+          <tr>
             <td>Kode Tracking</td>
             <td>: ${license.trackingCode || '-'}</td>
           </tr>
         </table>
 
         <p>
-          Sertifikat perizinan ini diterbitkan berdasarkan ketentuan peraturan perundang-undangan yang berlaku di Kabupaten Tapin dan berlaku sejak tanggal penerbitan.
+          Sertifikat perizinan ini diterbitkan berdasarkan ketentuan peraturan perundang-undangan yang berlaku di Kabupaten Tapin dan berlaku sejak tanggal penerbitan sampai dengan tanggal yang tercantum di atas.
         </p>
 
         <p>

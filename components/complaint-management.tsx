@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Plus, Trash2, Search, MessageSquare, Eye, Reply } from "lucide-react"
+import { Plus, Trash2, Search, MessageSquare, Eye, Reply, Star } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface Complaint {
@@ -36,6 +36,7 @@ interface Complaint {
   pesan: string
   status: string
   tanggapan?: string
+  rating?: number
   created_at: string
   updated_at: string
 }
@@ -55,6 +56,7 @@ function kategoriBadge(kategori: string) {
     pengaduan: "bg-red-100 text-red-800",
     saran: "bg-blue-100 text-blue-800",
     pertanyaan: "bg-green-100 text-green-800",
+    testimoni: "bg-yellow-100 text-yellow-800",
   }
   return colors[kategori] || "bg-gray-100 text-gray-800"
 }
@@ -311,6 +313,9 @@ export function ComplaintManagement() {
               <div><span className="font-medium">Email:</span> {selectedComplaint.email}</div>
               {selectedComplaint.telepon && <div><span className="font-medium">Telepon:</span> {selectedComplaint.telepon}</div>}
               <div><span className="font-medium">Kategori:</span> <Badge className={kategoriBadge(selectedComplaint.kategori)}>{selectedComplaint.kategori}</Badge></div>
+              {selectedComplaint.kategori === "testimoni" && selectedComplaint.rating && (
+                <div><span className="font-medium">Rating:</span> <span className="inline-flex items-center gap-0.5 ml-1">{[1,2,3,4,5].map(s => <Star key={s} className={`h-4 w-4 ${s <= (selectedComplaint.rating || 0) ? "text-yellow-400 fill-yellow-400" : "text-slate-300"}`} />)}</span></div>
+              )}
               {selectedComplaint.tracking_code && <div><span className="font-medium">Kode Tracking:</span> {selectedComplaint.tracking_code}</div>}
               <div><span className="font-medium">Status:</span> <Badge className={statusBadge(selectedComplaint.status)}>{selectedComplaint.status}</Badge></div>
               <div><span className="font-medium">Pesan:</span></div>

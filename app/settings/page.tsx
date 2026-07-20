@@ -3,10 +3,11 @@
 import { ProtectedRoute } from "@/components/protected-route"
 import { NewsManagement } from "@/components/news-management"
 import { GalleryManagement } from "@/components/gallery-management"
+import { UserManagement } from "@/components/user-management"
 import { useAuth } from "@/contexts/auth-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Settings, Newspaper, Image as ImageIcon } from "lucide-react"
+import { Settings, Newspaper, Image as ImageIcon, Users } from "lucide-react"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminHeader } from "@/components/layout/admin-header"
 
@@ -45,12 +46,12 @@ function SettingsPageContent() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Pengaturan</h2>
-              <p className="text-gray-600">Kelola Berita dan Galeri</p>
+              <p className="text-gray-600">Kelola Berita, Galeri, dan User</p>
             </div>
           </div>
 
           <Tabs defaultValue="news" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+            <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
               <TabsTrigger value="news" className="flex items-center gap-2">
                 <Newspaper className="h-4 w-4" />
                 Manajemen Berita
@@ -58,6 +59,10 @@ function SettingsPageContent() {
               <TabsTrigger value="gallery" className="flex items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
                 Manajemen Galeri
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Manajemen User
               </TabsTrigger>
             </TabsList>
 
@@ -67,6 +72,10 @@ function SettingsPageContent() {
 
             <TabsContent value="gallery" className="space-y-6">
               <GalleryManagement />
+            </TabsContent>
+
+            <TabsContent value="users" className="space-y-6">
+              <UserManagement />
             </TabsContent>
           </Tabs>
         </div>

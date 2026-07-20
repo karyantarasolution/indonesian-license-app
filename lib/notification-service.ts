@@ -73,4 +73,13 @@ export class NotificationService {
       undefined
     );
   }
+
+  static async notifyNewComplaint(nama: string, kategori: string, complaintId: string) {
+    return this.createNotification(
+      'Pengaduan Baru',
+      `Pengaduan baru dari ${nama} dengan kategori "${kategori}"`,
+      'complaint',
+      complaintId
+    );
+  }
 }

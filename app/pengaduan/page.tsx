@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageSquare, Send, ArrowLeft, LogIn } from "lucide-react";
+import { MessageSquare, Send, ArrowLeft, LogIn, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ export default function PengaduanPage() {
     kategori: "",
     trackingCode: "",
     pesan: "",
+    rating: 5,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,7 +43,7 @@ export default function PengaduanPage() {
         throw new Error(result.error || "Gagal mengirim pengaduan");
       }
       toast({ title: "Pengaduan Terkirim", description: "Terima kasih, pengaduan Anda akan segera ditindaklanjuti." });
-      setFormData({ nama: "", email: "", telepon: "", kategori: "", trackingCode: "", pesan: "" });
+      setFormData({ nama: "", email: "", telepon: "", kategori: "", trackingCode: "", pesan: "", rating: 5 });
     } catch (error) {
       toast({ title: "Error", description: "Gagal mengirim pengaduan", variant: "destructive" });
     } finally {
@@ -93,7 +94,7 @@ export default function PengaduanPage() {
               Pengaduan Layanan Perizinan
             </CardTitle>
             <CardDescription className="text-emerald-50">
-              Sampaikan pengaduan, saran, atau pertanyaan terkait layanan perizinan
+              Sampaikan pengaduan, saran, pertanyaan, atau testimoni terkait layanan perizinan
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
@@ -124,6 +125,7 @@ export default function PengaduanPage() {
                       <SelectItem value="pengaduan">Pengaduan</SelectItem>
                       <SelectItem value="saran">Saran</SelectItem>
                       <SelectItem value="pertanyaan">Pertanyaan</SelectItem>
+                      <SelectItem value="testimoni">Testimoni</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -133,6 +135,31 @@ export default function PengaduanPage() {
                 <Label htmlFor="trackingCode">Kode Tracking (jika terkait permohonan tertentu)</Label>
                 <Input id="trackingCode" value={formData.trackingCode} onChange={(e) => setFormData({ ...formData, trackingCode: e.target.value })} placeholder="Contoh: ABC12345" />
               </div>
+
+              {formData.kategori === "testimoni" && (
+                <div className="space-y-2">
+                  <Label>Rating *</Label>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, rating: star })}
+                        className="focus:outline-none"
+                      >
+                        <Star
+                          className={`h-7 w-7 cursor-pointer transition-colors ${
+                            star <= formData.rating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-slate-300 hover:text-slate-400"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    <span className="ml-2 text-sm text-slate-600">{formData.rating}/5</span>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="pesan">Pesan *</Label>

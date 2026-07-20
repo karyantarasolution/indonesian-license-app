@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge"
 import {
   Home,
   FileText,
-  Users,
   Settings,
   BarChart3,
   FileBarChart,
@@ -20,9 +19,6 @@ import {
   Bell,
   MessageSquare,
   CreditCard,
-  BookOpen,
-  CalendarDays,
-  Star,
 } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/auth-context"
@@ -51,10 +47,8 @@ export function AdminSidebar() {
     { id: "expired", label: "Izin Expired", icon: AlertCircle, href: "/dashboard/izin-expired" },
     { id: "payments", label: "Pembayaran", icon: CreditCard, href: "/payments" },
     { id: "complaints", label: "Pengaduan", icon: MessageSquare, href: "/complaints" },
-    { id: "users", label: "Manajemen User", icon: Users, href: "/users" },
     { id: "analytics", label: "Analytics", icon: BarChart3, href: "/analytics" },
     { id: "report", label: "Laporan", icon: FileBarChart, href: "/laporan" },
-    { id: "news", label: "Berita & Konten", icon: BookOpen, href: "/news" },
     { id: "settings", label: "Pengaturan", icon: Settings, href: "/settings" },
   ]
 

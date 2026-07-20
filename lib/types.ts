@@ -145,7 +145,7 @@ export interface Complaint {
   nama: string
   email: string
   telepon: string
-  kategori: "pengaduan" | "saran" | "pertanyaan"
+  kategori: "pengaduan" | "saran" | "pertanyaan" | "testimoni"
   pesan: string
   status: "baru" | "dibaca" | "ditindaklanjuti" | "selesai"
   tanggapan?: string
