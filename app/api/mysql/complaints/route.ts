@@ -23,6 +23,16 @@ async function ensureTable() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
+
+  // Migration: add testimoni to ENUM if missing
+  try {
+    await pool.execute(`ALTER TABLE complaints MODIFY COLUMN kategori ENUM('pengaduan', 'saran', 'pertanyaan', 'testimoni') NOT NULL DEFAULT 'pengaduan'`);
+  } catch {}
+
+  // Migration: add rating column if missing
+  try {
+    await pool.execute(`ALTER TABLE complaints ADD COLUMN rating INT NULL AFTER tanggapan`);
+  } catch {}
 }
 
 export async function GET() {
