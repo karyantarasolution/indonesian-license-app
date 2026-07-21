@@ -785,8 +785,8 @@ export default function TrackingPermohonanPage() {
                   </Card>
                 )}
 
-                {/* Certificate Section - shows when payment is lunas */}
-                {license.status === "selesai" && license.verificationStatus !== "rejected" && payment && payment.status_pembayaran === "lunas" && (
+                {/* Certificate Section - shows when payment is lunas (selesai or terlambat) */}
+                {(license.status === "selesai" || license.status === "terlambat") && license.verificationStatus !== "rejected" && payment && payment.status_pembayaran === "lunas" && (
                   <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">

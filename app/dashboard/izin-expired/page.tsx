@@ -38,9 +38,7 @@ export default function IzinExpiredPage() {
       else if (diffDays <= 30) { statusExpired = "warning"; warning++; }
       else { active++; }
 
-      if (statusExpired !== "active") {
-        items.push({ ...license, diffDays, statusExpired });
-      }
+      items.push({ ...license, diffDays, statusExpired });
     }
     items.sort((a, b) => a.diffDays - b.diffDays);
     return { expired, warning, active, items };
@@ -96,7 +94,7 @@ export default function IzinExpiredPage() {
         item.pemohonNama || "-",
         item.berlakuSampai ? new Date(item.berlakuSampai).toLocaleDateString("id-ID") : "-",
         item.diffDays < 0 ? `Terlewat ${Math.abs(item.diffDays)} hari` : `${item.diffDays} hari lagi`,
-        item.statusExpired === "expired" ? "Expired" : "Hampir Expired"
+        item.statusExpired === "expired" ? "Expired" : item.statusExpired === "warning" ? "Hampir Expired" : "Aktif"
       ]);
 
       (doc as any).autoTable({
@@ -204,9 +202,9 @@ export default function IzinExpiredPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Daftar Izin Perlu Perhatian</CardTitle>
+              <CardTitle>Daftar Izin Masa Berlaku</CardTitle>
               <CardDescription>
-                Menampilkan izin yang sudah habis masa berlaku atau akan habis dalam 30 hari ke depan.
+                Menampilkan semua izin beserta masa berlakunya: aktif, mendekati expired, dan sudah expired.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -226,7 +224,7 @@ export default function IzinExpiredPage() {
                   {expiredData.items.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="h-24 text-center">
-                        Tidak ada izin yang expired atau mendekati expired.
+                        Tidak ada izin dengan data masa berlaku.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -249,8 +247,10 @@ export default function IzinExpiredPage() {
                         <TableCell>
                           {item.statusExpired === "expired" ? (
                             <Badge variant="destructive">Expired</Badge>
-                          ) : (
+                          ) : item.statusExpired === "warning" ? (
                             <Badge className="bg-amber-500 hover:bg-amber-600">Hampir Expired</Badge>
+                          ) : (
+                            <Badge className="bg-green-500 hover:bg-green-600">Aktif</Badge>
                           )}
                         </TableCell>
                       </TableRow>
