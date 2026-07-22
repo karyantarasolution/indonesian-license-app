@@ -4,11 +4,10 @@ import { getMySQLPool } from '@/lib/mysql';
 // POST - Verify license files (approve or reject)
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Handle both Promise and direct params (Next.js 15 compatibility)
-    const resolvedParams = params instanceof Promise ? await params : params;
+    const resolvedParams = await params;
     const licenseId = resolvedParams.id;
     
     const body = await request.json();

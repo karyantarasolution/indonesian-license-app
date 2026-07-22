@@ -7,12 +7,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const resolvedParams = await params;
     const pool = getMySQLPool();
-    const [rows] = await pool.execute('SELECT * FROM payments WHERE id = ?', [resolvedParams.id]);
-    const payment = Array.isArray(rows) ? rows[0] : null;
-    if (!payment) {
-      return NextResponse.json({ success: false, error: 'Payment not found' }, { status: 404 });
+    const [rows] = await pool.execute('SELECT * FROM tutorials WHERE id = ?', [resolvedParams.id]);
+    const tutorial = Array.isArray(rows) ? rows[0] : null;
+    if (!tutorial) {
+      return NextResponse.json({ success: false, error: 'Tutorial not found' }, { status: 404 });
     }
-    return NextResponse.json({ success: true, data: payment });
+    return NextResponse.json({ success: true, data: tutorial });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
@@ -22,14 +22,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const resolvedParams = await params;
     const body = await request.json();
-    const allowedFields = ['jumlah', 'metode_pembayaran', 'status_pembayaran', 'tanggal_pembayaran', 'bukti_pembayaran', 'keterangan', 'license_id', 'tracking_code'];
+    const allowedFields = ['judul', 'deskripsi', 'icon', 'langkah', 'urutan', 'published'];
     const updates: string[] = [];
     const values: any[] = [];
 
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
-        updates.push(`${field} = ?`);
-        values.push(body[field]);
+        if (field === 'langkah') {
+          updates.push(`${field} = ?`);
+          values.push(JSON.stringify(body[field]));
+        } else if (field === 'published') {
+          updates.push(`${field} = ?`);
+          values.push(body[field] ? 1 : 0);
+        } else {
+          updates.push(`${field} = ?`);
+          values.push(body[field]);
+        }
       }
     }
 
@@ -37,14 +45,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: 'No fields to update' }, { status: 400 });
     }
 
-    updates.push('updated_at = ?');
-    values.push(new Date().toISOString().slice(0, 19).replace('T', ' '));
     values.push(resolvedParams.id);
 
     const pool = getMySQLPool();
-    await pool.execute(`UPDATE payments SET ${updates.join(', ')} WHERE id = ?`, values);
+    await pool.execute(`UPDATE tutorials SET ${updates.join(', ')} WHERE id = ?`, values);
 
-    const [rows] = await pool.execute('SELECT * FROM payments WHERE id = ?', [resolvedParams.id]);
+    const [rows] = await pool.execute('SELECT * FROM tutorials WHERE id = ?', [resolvedParams.id]);
     return NextResponse.json({ success: true, data: Array.isArray(rows) ? rows[0] : null });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -55,8 +61,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const resolvedParams = await params;
     const pool = getMySQLPool();
-    await pool.execute('DELETE FROM payments WHERE id = ?', [resolvedParams.id]);
-    return NextResponse.json({ success: true, message: 'Payment deleted' });
+    await pool.execute('DELETE FROM tutorials WHERE id = ?', [resolvedParams.id]);
+    return NextResponse.json({ success: true, message: 'Tutorial deleted' });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

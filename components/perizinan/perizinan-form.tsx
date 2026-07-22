@@ -65,7 +65,7 @@ export function PerizinanForm({ onSubmit, initialData, onCancel }: PerizinanForm
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <Calendar mode="single" selected={date || undefined} onSelect={onDateChange} initialFocus />
+        <Calendar mode="single" selected={date || undefined} onSelect={onDateChange} initialFocus required />
       </PopoverContent>
     </Popover>
   )

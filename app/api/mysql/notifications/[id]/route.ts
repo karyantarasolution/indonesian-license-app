@@ -3,9 +3,10 @@ import { getMySQLPool } from '@/lib/mysql';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const body = await request.json();
     const { is_read } = body;
     
@@ -20,7 +21,7 @@ export async function PATCH(
     
     await pool.execute(
       'UPDATE notifications SET is_read = ? WHERE id = ?',
-      [is_read, params.id]
+      [is_read, resolvedParams.id]
     );
     
     return NextResponse.json({
@@ -38,14 +39,15 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const pool = getMySQLPool();
     
     await pool.execute(
       'DELETE FROM notifications WHERE id = ?',
-      [params.id]
+      [resolvedParams.id]
     );
     
     return NextResponse.json({

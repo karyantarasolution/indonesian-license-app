@@ -1,4 +1,5 @@
 import type { License } from "@/contexts/license-context";
+import type { Complaint } from "@/lib/types";
 import { format } from "date-fns";
 
 export const getKopSuratHTML = (title: string, subtitle: string) => `
@@ -59,7 +60,7 @@ export async function exportHtmlToPDF(
   const opt = {
     margin: 10,
     filename: filename + '.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
+    image: { type: 'jpeg' as const, quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
     jsPDF: { unit: 'mm', format: 'a4', orientation: orientation }
   };
@@ -244,6 +245,77 @@ export async function exportSertifikatPerizinan(license: License, filename = "se
   await exportHtmlToPDF(html, filename, "portrait");
 }
 
+// 2. Laporan Status Perizinan
+export async function exportStatusPerizinanHtml(data: License[], overdueLicenses: License[], filename = "laporan-status-perizinan") {
+  const tableRows = data.map((license, index) => {
+    const isOverdue = license.totalSLA > 14;
+    const tanggalMasuk = license.permohonanMasuk ? format(new Date(license.permohonanMasuk), 'dd/MM/yyyy') : '-';
+    const tanggalSelesai = license.tglPenyerahanIzin ? format(new Date(license.tglPenyerahanIzin), 'dd/MM/yyyy') : '-';
+    const durasiProses = license.permohonanMasuk
+      ? Math.floor((new Date().getTime() - new Date(license.permohonanMasuk).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    const getStatus = () => {
+      if (license.verificationStatus === "rejected") return "Ditolak";
+      if (license.status === "draft") return "Draft";
+      if (license.status === "proses") return "Dalam Proses";
+      if (license.status === "rekomendasi") return "Menunggu Rekomendasi";
+      if (license.status === "selesai") return "Selesai";
+      if (license.status === "terlambat") return "Terlambat";
+      return license.status || "-";
+    };
+
+    return `
+      <tr>
+        <td style="text-align: center;">${index + 1}</td>
+        <td>${license.namaIzin || '-'}</td>
+        <td>${license.jenisIzin || '-'}</td>
+        <td>${license.sektor || '-'}</td>
+        <td style="text-align: center;">${getStatus()}</td>
+        <td style="text-align: center;">${tanggalMasuk}</td>
+        <td style="text-align: center;">${durasiProses} hari</td>
+        <td style="text-align: center;">${isOverdue ? '<span style="color:red;font-weight:bold">Terlambat</span>' : 'Tepat Waktu'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const html = `
+    ${getTableStyle()}
+    ${getKopSuratHTML("LAPORAN STATUS PERIZINAN", "Overview lengkap status semua perizinan dengan timeline progress")}
+    <p style="text-align: center; font-size: 11px; margin-top: -10px; margin-bottom: 20px;">Tanggal Laporan: ${format(new Date(), 'dd MMMM yyyy')}</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Izin</th>
+          <th>Jenis Izin</th>
+          <th>Sektor</th>
+          <th>Status</th>
+          <th>Tanggal Masuk</th>
+          <th>Durasi Proses</th>
+          <th>SLA</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRows}
+      </tbody>
+    </table>
+    
+    <div style="font-size: 11px; margin-top: 20px;">
+      <strong>Ringkasan:</strong>
+      <ul style="list-style: none; padding-left: 0;">
+        <li>Total Perizinan: ${data.length}</li>
+        <li>Selesai: ${data.filter(l => l.status === "selesai").length}</li>
+        <li>Dalam Proses: ${data.filter(l => l.status === "proses" || l.status === "rekomendasi").length}</li>
+        <li>Terlambat: ${data.filter(l => overdueLicenses.some(ol => ol.id === l.id)).length}</li>
+      </ul>
+    </div>
+  `;
+
+  await exportHtmlToPDF(html, filename, "landscape");
+}
+
 // 3. Laporan Analisis Sektor
 export async function exportAnalisisSektorHtml(data: License[], sectorData: { sector: string; count: number }[], overdueLicenses: License[], filename = "laporan-analisis-sektor") {
   const tableRows = sectorData.map(({ sector, count }, index) => {
@@ -383,46 +455,59 @@ export async function exportDaftarPemohonHtml(data: License[], filename = "lapor
   await exportHtmlToPDF(html, filename, "landscape");
 }
 
-// 6. Laporan Permohonan Ditolak
-export async function exportPermohonanDitolakHtml(data: License[], filename = "laporan-permohonan-ditolak") {
-  const rejectedLicenses = data.filter(l => l.verificationStatus === "rejected");
+// 6. Laporan Pengaduan
+export async function exportLaporanPengaduanHtml(data: Complaint[], filename = "laporan-pengaduan") {
+  const totalPengaduan = data.filter(c => c.kategori === "pengaduan").length;
+  const totalSaran = data.filter(c => c.kategori === "saran").length;
+  const totalPertanyaan = data.filter(c => c.kategori === "pertanyaan").length;
+  const totalSelesai = data.filter(c => c.status === "selesai" || c.status === "ditindaklanjuti").length;
 
-  const tableRows = rejectedLicenses.map((license, index) => {
-    const tanggalMasuk = license.permohonanMasuk ? format(new Date(license.permohonanMasuk), 'dd/MM/yyyy') : '-';
+  const tableRows = data.map((complaint, index) => {
+    const tanggal = complaint.createdAt ? format(new Date(complaint.createdAt), 'dd/MM/yyyy') : '-';
+    const statusLabel = complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1);
+    const kategoriLabel = complaint.kategori.charAt(0).toUpperCase() + complaint.kategori.slice(1);
     return `
       <tr>
         <td style="text-align: center;">${index + 1}</td>
-        <td>${license.trackingCode || '-'}</td>
-        <td>${license.pemohonNama || '-'}</td>
-        <td>${license.namaIzin || '-'}</td>
-        <td style="text-align: center;">${tanggalMasuk}</td>
-        <td>${license.verificationNotes || 'Tidak ada alasan yang dicantumkan'}</td>
+        <td>${complaint.nama || '-'}</td>
+        <td>${complaint.email || '-'}</td>
+        <td style="text-align: center;">${kategoriLabel}</td>
+        <td>${(complaint.pesan || '-').substring(0, 100)}${(complaint.pesan || '').length > 100 ? '...' : ''}</td>
+        <td style="text-align: center;">${statusLabel}</td>
+        <td style="text-align: center;">${tanggal}</td>
+        <td>${(complaint.tanggapan || '-')}</td>
       </tr>
     `;
   }).join('');
 
   const html = `
     ${getTableStyle()}
-    ${getKopSuratHTML("LAPORAN PERMOHONAN DITOLAK", "Daftar Permohonan Perizinan Yang Ditolak")}
+    ${getKopSuratHTML("LAPORAN PENGADUAN", "Daftar Laporan Pengaduan Yang Masuk dari Masyarakat")}
     <p style="text-align: center; font-size: 11px; margin-top: -10px; margin-bottom: 20px;">Tanggal Laporan: ${format(new Date(), 'dd MMMM yyyy')}</p>
     
-    <div style="font-size: 11px; margin-bottom: 15px;">
-      <strong>Total Permohonan Ditolak:</strong> ${rejectedLicenses.length} dari ${data.length} permohonan
+    <div style="font-size: 11px; margin-bottom: 15px; display: flex; gap: 20px; flex-wrap: wrap;">
+      <div><strong>Total Pengaduan:</strong> ${totalPengaduan}</div>
+      <div><strong>Saran:</strong> ${totalSaran}</div>
+      <div><strong>Pertanyaan:</strong> ${totalPertanyaan}</div>
+      <div><strong>Selesai Ditangani:</strong> ${totalSelesai}</div>
+      <div><strong>Total Data:</strong> ${data.length}</div>
     </div>
 
     <table>
       <thead>
         <tr>
           <th>No</th>
-          <th>Kode Tracking</th>
-          <th>Nama Pemohon</th>
-          <th>Jenis Izin</th>
+          <th>Nama</th>
+          <th>Email</th>
+          <th>Kategori</th>
+          <th>Pesan</th>
+          <th>Status</th>
           <th>Tanggal</th>
-          <th>Alasan Penolakan</th>
+          <th>Tanggapan</th>
         </tr>
       </thead>
       <tbody>
-        ${tableRows.length > 0 ? tableRows : '<tr><td colspan="6" style="text-align: center;">Tidak ada permohonan yang ditolak</td></tr>'}
+        ${tableRows.length > 0 ? tableRows : '<tr><td colspan="8" style="text-align: center;">Tidak ada data pengaduan</td></tr>'}
       </tbody>
     </table>
   `;

@@ -54,7 +54,7 @@ function PemohonDashboardContent() {
     keterangan: "",
     pemohonNama: user?.name || "",
     pemohonEmail: user?.email || "",
-    pemohonTelepon: user?.phone || "",
+    pemohonTelepon: (user as any)?.phone || "",
   })
 
   const handleSubmit = async () => {
@@ -76,7 +76,7 @@ function PemohonDashboardContent() {
         status: "dikirim",
         createdBy: user?.username || "pemohon",
         keterangan: "", // Keterangan kosong untuk permohonan baru, akan diisi admin nanti
-      })
+      } as any)
 
       toast({
         title: "Pengajuan Berhasil!",
@@ -94,7 +94,7 @@ function PemohonDashboardContent() {
         keterangan: "",
         pemohonNama: user?.name || "",
         pemohonEmail: user?.email || "",
-        pemohonTelepon: user?.phone || "",
+        pemohonTelepon: (user as any)?.phone || "",
       })
       refreshLicenses()
     } catch (error) {
@@ -136,7 +136,7 @@ function PemohonDashboardContent() {
   }
 
   // Redirect jika bukan pemohon
-  if (user?.role !== "pemohon") {
+  if ((user?.role as string) !== "pemohon") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card>

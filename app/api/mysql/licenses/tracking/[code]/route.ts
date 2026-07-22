@@ -6,11 +6,10 @@ import type { License } from '@/contexts/license-context';
 // GET - Get license by tracking code (public, untuk pemohon)
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ code: string }> | { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    // Handle both Promise and direct params (Next.js 13+ compatibility)
-    const resolvedParams = params instanceof Promise ? await params : params;
+    const resolvedParams = await params;
     const trackingCode = resolvedParams.code;
 
     if (!trackingCode) {
@@ -28,7 +27,7 @@ export async function GET(
         [trackingCode.toUpperCase()]
       );
       
-      const dbRow = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+      const dbRow = Array.isArray(rows) && rows.length > 0 ? (rows[0] as Record<string, any>) : null;
       
       if (!dbRow) {
         return NextResponse.json(

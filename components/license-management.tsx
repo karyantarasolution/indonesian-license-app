@@ -1199,9 +1199,9 @@ export function LicenseManagement() {
       if (typeof bValue === "string") bValue = bValue.toLowerCase();
 
       if (sortDirection === "asc") {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        return (aValue ?? '') < (bValue ?? '') ? -1 : (aValue ?? '') > (bValue ?? '') ? 1 : 0;
       } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        return (aValue ?? '') > (bValue ?? '') ? -1 : (aValue ?? '') < (bValue ?? '') ? 1 : 0;
       }
     });
 

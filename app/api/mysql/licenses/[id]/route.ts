@@ -7,13 +7,14 @@ export const dynamic = 'force-dynamic';
 // GET - Get single license by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const pool = getMySQLPool();
     const [rows] = await pool.execute(
       'SELECT * FROM licenses WHERE id = ?',
-      [params.id]
+      [resolvedParams.id]
     );
     
     const license = Array.isArray(rows) ? rows[0] : null;
@@ -40,9 +41,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const body = await request.json();
     const is_applicant_edit = body.is_applicant_edit;
     
@@ -88,7 +90,7 @@ export async function PUT(
       }, { status: 400 });
     }
     
-    updateValues.push(params.id);
+    updateValues.push(resolvedParams.id);
     
     const pool = getMySQLPool();
     await pool.execute(
@@ -105,7 +107,7 @@ export async function PUT(
         const berlakuStr = berlakuDate.toISOString().slice(0, 10);
         await pool.execute(
           `UPDATE licenses SET berlaku_sampai = ? WHERE id = ? AND berlaku_sampai IS NULL`,
-          [berlakuStr, params.id]
+          [berlakuStr, resolvedParams.id]
         );
       } catch (e) {
         console.error('Failed to auto-set berlaku_sampai:', e);
@@ -115,7 +117,7 @@ export async function PUT(
     // Fetch updated license
     const [rows] = await pool.execute(
       'SELECT * FROM licenses WHERE id = ?',
-      [params.id]
+      [resolvedParams.id]
     );
     
     const updatedLicense: any = Array.isArray(rows) ? rows[0] : null;
@@ -132,7 +134,7 @@ export async function PUT(
           const notifId = crypto.randomUUID();
           await pool.execute(
             `INSERT INTO notifications (id, title, message, type, reference_id, is_read) VALUES (?, ?, ?, ?, ?, FALSE)`,
-            [notifId, 'Pembaruan Dokumen Pemohon', `Data atas nama ${pemohonName} telah di edit (Kode Tracking: ${tCode})`, 'document_edit', params.id]
+            [notifId, 'Pembaruan Dokumen Pemohon', `Data atas nama ${pemohonName} telah di edit (Kode Tracking: ${tCode})`, 'document_edit', resolvedParams.id]
           );
         }
         
@@ -143,7 +145,7 @@ export async function PUT(
           const slaNotifId = crypto.randomUUID();
           await pool.execute(
             `INSERT INTO notifications (id, title, message, type, reference_id, is_read) VALUES (?, ?, ?, ?, ?, FALSE)`,
-            [slaNotifId, isOverdue ? 'SLA Terlambat' : 'Peringatan SLA', `${licenseName} - Total SLA: ${totalSLA} hari${isOverdue ? ' (MELEBIHI BATAS 14 HARI)' : ''}`, 'sla_warning', params.id]
+            [slaNotifId, isOverdue ? 'SLA Terlambat' : 'Peringatan SLA', `${licenseName} - Total SLA: ${totalSLA} hari${isOverdue ? ' (MELEBIHI BATAS 14 HARI)' : ''}`, 'sla_warning', resolvedParams.id]
           );
         }
         
@@ -152,7 +154,7 @@ export async function PUT(
           const statusNotifId = crypto.randomUUID();
           await pool.execute(
             `INSERT INTO notifications (id, title, message, type, reference_id, is_read) VALUES (?, ?, ?, ?, ?, FALSE)`,
-            [statusNotifId, 'Perubahan Status Izin', `${licenseName} - Status berubah menjadi ${body.status}`, 'status_change', params.id]
+            [statusNotifId, 'Perubahan Status Izin', `${licenseName} - Status berubah menjadi ${body.status}`, 'status_change', resolvedParams.id]
           );
         }
       } catch (notifErr) {
@@ -176,13 +178,14 @@ export async function PUT(
 // DELETE - Delete license
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const pool = getMySQLPool();
     await pool.execute(
       'DELETE FROM licenses WHERE id = ?',
-      [params.id]
+      [resolvedParams.id]
     );
     
     return NextResponse.json({ 

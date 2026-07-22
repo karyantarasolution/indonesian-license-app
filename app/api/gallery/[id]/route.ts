@@ -5,11 +5,10 @@ import { config } from '@/lib/config';
 // PUT - Update gallery item
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Handle both Promise and direct params (Next.js 13+ compatibility)
-    const resolvedParams = params instanceof Promise ? await params : params;
+    const resolvedParams = await params;
     const body = await request.json();
     const id = resolvedParams.id;
     
@@ -59,11 +58,10 @@ export async function PUT(
 // DELETE - Delete gallery item
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Handle both Promise and direct params (Next.js 13+ compatibility)
-    const resolvedParams = params instanceof Promise ? await params : params;
+    const resolvedParams = await params;
     const id = resolvedParams.id;
     
     if (config.useMySQL) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useLicenses } from "../contexts/license-context";
 import type { License } from "../contexts/license-context";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -26,6 +26,7 @@ import {
   BarChart3,
   Printer,
   XCircle,
+  MessageSquare,
 } from "lucide-react";
 import { ExportDialog } from "./export-dialog";
 import { 
@@ -39,9 +40,10 @@ import {
   exportAnalisisSektorHtml,
   exportIzinExpiredHtml,
   exportDaftarPemohonHtml,
-  exportPermohonanDitolakHtml
+  exportLaporanPengaduanHtml
 } from "../lib/html2pdf-export";
 import { useToast } from "@/hooks/use-toast";
+import type { Complaint } from "@/lib/types";
 
 export default function ReportDashboard() {
   const { licenses, getOverdueLicenses } = useLicenses();
@@ -58,8 +60,39 @@ export default function ReportDashboard() {
   const [isExportingIzinExpiredPDF, setIsExportingIzinExpiredPDF] = useState(false);
   const [isExportingDaftarPemohonPDF, setIsExportingDaftarPemohonPDF] = useState(false);
   const [isExportingDitolakPDF, setIsExportingDitolakPDF] = useState(false);
+  const [isExportingPengaduanPDF, setIsExportingPengaduanPDF] = useState(false);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
 
   const overdueLicenses = getOverdueLicenses();
+
+  // Load complaints from API
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/mysql/complaints");
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data)) {
+          const formatted = result.data.map((c: any) => ({
+            id: c.id,
+            licenseId: c.license_id || null,
+            trackingCode: c.tracking_code || null,
+            nama: c.nama,
+            email: c.email,
+            telepon: c.telepon || "",
+            kategori: c.kategori,
+            pesan: c.pesan,
+            status: c.status,
+            tanggapan: c.tanggapan || undefined,
+            createdAt: c.created_at ? new Date(c.created_at) : new Date(),
+            updatedAt: c.updated_at ? new Date(c.updated_at) : new Date(),
+          }));
+          setComplaints(formatted);
+        }
+      } catch (err) {
+        console.error("Gagal memuat data pengaduan:", err);
+      }
+    })();
+  }, []);
 
   // Filter data berdasarkan periode dan sektor
   const filteredLicenses = useMemo(() => {
@@ -450,21 +483,20 @@ export default function ReportDashboard() {
   };
 
   const handleDownloadDitolakPDF = async () => {
-    const rejectedLicenses = filteredLicenses.filter(l => l.verificationStatus === "rejected");
-    if (rejectedLicenses.length === 0) {
-      toast({ title: "Tidak ada data", description: "Tidak ada permohonan yang ditolak.", variant: "destructive" });
+    if (complaints.length === 0) {
+      toast({ title: "Tidak ada data", description: "Tidak ada data pengaduan yang dapat diekspor.", variant: "destructive" });
       return;
     }
-    setIsExportingDitolakPDF(true);
+    setIsExportingPengaduanPDF(true);
     try {
       const timestamp = new Date().toISOString().split("T")[0];
-      const filename = `laporan-permohonan-ditolak-${timestamp}`;
-      await exportPermohonanDitolakHtml(filteredLicenses, filename);
-      toast({ title: "Berhasil", description: "PDF laporan permohonan ditolak berhasil diunduh." });
+      const filename = `laporan-pengaduan-${timestamp}`;
+      await exportLaporanPengaduanHtml(complaints, filename);
+      toast({ title: "Berhasil", description: "PDF laporan pengaduan berhasil diunduh." });
     } catch (error) {
       toast({ title: "Ekspor gagal", variant: "destructive" });
     } finally {
-      setIsExportingDitolakPDF(false);
+      setIsExportingPengaduanPDF(false);
     }
   };
 
@@ -636,9 +668,9 @@ export default function ReportDashboard() {
               <FileText className="h-4 w-4" />
               Daftar Pemohon
             </TabsTrigger>
-            <TabsTrigger value="permohonan-ditolak" className="flex items-center gap-2">
-              <XCircle className="h-4 w-4" />
-              Permohonan Ditolak
+            <TabsTrigger value="laporan-pengaduan" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Laporan Pengaduan
             </TabsTrigger>
           </TabsList>
         </div>
@@ -2276,21 +2308,21 @@ export default function ReportDashboard() {
           </Card>
         </TabsContent>
 
-        {/* Laporan Permohonan Ditolak Tab */}
-        <TabsContent value="permohonan-ditolak" className="space-y-6">
+        {/* Laporan Pengaduan Tab */}
+        <TabsContent value="laporan-pengaduan" className="space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-red-700">Total Ditolak</p>
+                    <p className="text-sm font-medium text-red-700">Total Pengaduan</p>
                     <p className="text-2xl font-bold text-red-900">
-                      {filteredLicenses.filter(l => l.verificationStatus === "rejected").length}
+                      {complaints.filter(c => c.kategori === "pengaduan").length}
                     </p>
-                    <p className="text-xs text-red-600">permohonan ditolak</p>
+                    <p className="text-xs text-red-600">pengaduan masuk</p>
                   </div>
-                  <XCircle className="h-8 w-8 text-red-600" />
+                  <MessageSquare className="h-8 w-8 text-red-600" />
                 </div>
               </CardContent>
             </Card>
@@ -2298,13 +2330,27 @@ export default function ReportDashboard() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-amber-700">Menunggu Verifikasi</p>
+                    <p className="text-sm font-medium text-amber-700">Menunggu Ditindaklanjuti</p>
                     <p className="text-2xl font-bold text-amber-900">
-                      {filteredLicenses.filter(l => l.verificationStatus === "pending").length}
+                      {complaints.filter(c => c.kategori === "pengaduan" && (c.status === "baru" || c.status === "dibaca")).length}
                     </p>
-                    <p className="text-xs text-amber-600">belum diverifikasi</p>
+                    <p className="text-xs text-amber-600">belum ditindaklanjuti</p>
                   </div>
                   <Clock className="h-8 w-8 text-amber-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-700">Saran & Pertanyaan</p>
+                    <p className="text-2xl font-bold text-blue-900">
+                      {complaints.filter(c => c.kategori === "saran" || c.kategori === "pertanyaan").length}
+                    </p>
+                    <p className="text-xs text-blue-600">saran & pertanyaan</p>
+                  </div>
+                  <FileText className="h-8 w-8 text-blue-600" />
                 </div>
               </CardContent>
             </Card>
@@ -2312,11 +2358,11 @@ export default function ReportDashboard() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-green-700">Disetujui</p>
+                    <p className="text-sm font-medium text-green-700">Selesai Ditangani</p>
                     <p className="text-2xl font-bold text-green-900">
-                      {filteredLicenses.filter(l => l.verificationStatus === "approved").length}
+                      {complaints.filter(c => c.status === "selesai" || c.status === "ditindaklanjuti").length}
                     </p>
-                    <p className="text-xs text-green-600">permohonan disetujui</p>
+                    <p className="text-xs text-green-600">sudah ditangani</p>
                   </div>
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
@@ -2324,13 +2370,30 @@ export default function ReportDashboard() {
             </Card>
           </div>
 
-          {/* Rejected Applications Table */}
+          {/* Pengaduan Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <XCircle className="h-5 w-5 text-red-600" />
-                Daftar Permohonan Ditolak
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-red-600" />
+                    Daftar Laporan Pengaduan
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Data pengaduan yang masuk dari masyarakat
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadDitolakPDF}
+                  disabled={isExportingPengaduanPDF}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {isExportingPengaduanPDF ? "Mengunduh..." : "Download PDF"}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
@@ -2338,49 +2401,58 @@ export default function ReportDashboard() {
                   <thead>
                     <tr className="bg-gradient-to-r from-red-50 to-red-100 border-b-2 border-red-300">
                       <th className="text-center p-3 text-xs font-bold text-red-800 border-r border-red-200 w-12">No</th>
-                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Kode Tracking</th>
-                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Nama Pemohon</th>
-                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Jenis Izin</th>
+                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Nama</th>
+                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Email</th>
+                      <th className="text-center p-3 text-xs font-bold text-red-800 border-r border-red-200">Kategori</th>
+                      <th className="text-left p-3 text-xs font-bold text-red-800 border-r border-red-200">Pesan</th>
+                      <th className="text-center p-3 text-xs font-bold text-red-800 border-r border-red-200">Status</th>
                       <th className="text-center p-3 text-xs font-bold text-red-800 border-r border-red-200">Tanggal</th>
-                      <th className="text-left p-3 text-xs font-bold text-red-800">Alasan Penolakan</th>
+                      <th className="text-left p-3 text-xs font-bold text-red-800">Tanggapan</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredLicenses.filter(l => l.verificationStatus === "rejected").length === 0 ? (
+                    {complaints.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-center py-8 text-gray-500">
-                          Tidak ada permohonan yang ditolak
+                        <td colSpan={8} className="text-center py-8 text-gray-500">
+                          Tidak ada data pengaduan
                         </td>
                       </tr>
                     ) : (
-                      filteredLicenses
-                        .filter(l => l.verificationStatus === "rejected")
-                        .map((license, index) => (
-                          <tr key={license.id} className="hover:bg-red-50 transition-colors border-b border-slate-200">
-                            <td className="p-3 text-center text-sm text-slate-700 border-r border-slate-200 font-medium">{index + 1}</td>
-                            <td className="p-3 text-sm text-slate-800 border-r border-slate-200 font-mono font-semibold">{license.trackingCode || "-"}</td>
-                            <td className="p-3 text-sm text-slate-800 border-r border-slate-200 font-medium">{license.pemohonNama || "-"}</td>
-                            <td className="p-3 text-sm text-slate-700 border-r border-slate-200">{license.namaIzin || "-"}</td>
-                            <td className="p-3 text-sm text-slate-700 border-r border-slate-200 text-center whitespace-nowrap">{formatDate(license.permohonanMasuk)}</td>
-                            <td className="p-3 text-sm text-red-700 font-medium">{license.verificationNotes || "Tidak ada alasan yang dicantumkan"}</td>
-                          </tr>
-                        ))
+                      complaints.map((complaint, index) => (
+                        <tr key={complaint.id} className="hover:bg-red-50 transition-colors border-b border-slate-200">
+                          <td className="p-3 text-center text-sm text-slate-700 border-r border-slate-200 font-medium">{index + 1}</td>
+                          <td className="p-3 text-sm text-slate-800 border-r border-slate-200 font-medium">{complaint.nama}</td>
+                          <td className="p-3 text-sm text-slate-600 border-r border-slate-200">{complaint.email}</td>
+                          <td className="p-3 text-center border-r border-slate-200">
+                            <Badge className={`text-xs ${
+                              complaint.kategori === "pengaduan" ? "bg-red-100 text-red-800" :
+                              complaint.kategori === "saran" ? "bg-blue-100 text-blue-800" :
+                              complaint.kategori === "pertanyaan" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-purple-100 text-purple-800"
+                            }`}>
+                              {complaint.kategori.charAt(0).toUpperCase() + complaint.kategori.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm text-slate-700 border-r border-slate-200 max-w-xs truncate">{complaint.pesan}</td>
+                          <td className="p-3 text-center border-r border-slate-200">
+                            <Badge className={`text-xs ${
+                              complaint.status === "baru" ? "bg-gray-100 text-gray-800" :
+                              complaint.status === "dibaca" ? "bg-blue-100 text-blue-800" :
+                              complaint.status === "ditindaklanjuti" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-green-100 text-green-800"
+                            }`}>
+                              {complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm text-slate-700 border-r border-slate-200 text-center whitespace-nowrap">
+                            {complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString("id-ID") : "-"}
+                          </td>
+                          <td className="p-3 text-sm text-slate-700 max-w-xs truncate">{complaint.tanggapan || "-"}</td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
-              </div>
-              {/* Download PDF Button */}
-              <div className="mt-4 flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadDitolakPDF}
-                  disabled={isExportingDitolakPDF}
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  {isExportingDitolakPDF ? "Mengunduh..." : "Download PDF"}
-                </Button>
               </div>
             </CardContent>
           </Card>
