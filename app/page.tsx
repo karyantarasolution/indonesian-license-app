@@ -556,10 +556,10 @@ export default function LandingPage() {
               </div>
               <div>
                 <h1 className="text-base font-bold text-slate-900 uppercase tracking-tight">
-                  Sistem Pelayanan Perizinan DPMPTSP Kabupaten Tapin
+                  DPMPTSP Kabupaten Tapin
                 </h1>
                 <p className="text-sm text-slate-600 mt-0.5">
-                  SIP(Sistem Informasi Perizinan Tapin)
+                  Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu
                 </p>
               </div>
             </div>
@@ -594,6 +594,12 @@ export default function LandingPage() {
               >
                 Pengaduan
               </Link>
+              <Link 
+                href="/riwayat" 
+                className="text-sm text-slate-700 hover:text-slate-900 font-medium"
+              >
+                Riwayat Saya
+              </Link>
               <Link href="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-sm">
                   <LogIn className="h-4 w-4 mr-2" />
@@ -613,7 +619,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                  Selamat Datang Di SIP (Sistem Informasi Perizinan) Kabupaten Tapin
+                  Selamat Datang Di DPMPTSP Kabupaten Tapin
                 </h1>
                 <p className="text-lg md:text-xl text-emerald-50 mb-8">
                   Komitmen kami untuk memberikan pelayanan yang cepat, mudah, dan transparan dalam mengelola setiap permohonan perizinan Anda.

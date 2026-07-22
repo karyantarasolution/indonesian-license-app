@@ -160,7 +160,7 @@ export default function ReportDashboard() {
     today.setHours(0, 0, 0, 0);
 
     return filteredLicenses
-      .filter(l => l.status === "selesai" && l.berlakuSampai)
+      .filter(l => l.berlakuSampai)
       .map(license => {
         const validUntil = new Date(license.berlakuSampai!);
         validUntil.setHours(0, 0, 0, 0);

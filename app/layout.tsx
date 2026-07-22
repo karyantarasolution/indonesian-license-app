@@ -18,9 +18,9 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Sistem Perizinan SLA",
-  description: "Aplikasi Manajemen Perizinan SLA",
-  generator: "MALL PELAYANAN PUBLIK",
+  title: "DPMPTSP Kabupaten Tapin",
+  description: "Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu Kabupaten Tapin",
+  generator: "DPMPTSP KABUPATEN TAPIN",
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",

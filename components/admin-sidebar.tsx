@@ -19,6 +19,8 @@ import {
   Bell,
   MessageSquare,
   CreditCard,
+  ClipboardList,
+  Database,
 } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/auth-context"
@@ -40,15 +42,16 @@ export function AdminSidebar() {
 
   // Menu items - filter berdasarkan role
   const allMenuItems: MenuItem[] = [
-    { id: "dashboard", label: "Dashboard", icon: Home, href: "/dashboard" },
-    { id: "notifications", label: "Notifikasi", icon: Bell, href: "/notifications", badge: unreadCount },
     { id: "licenses", label: "Kelola Perizinan", icon: FileText, href: "/licenses" },
+    { id: "notifications", label: "Notifikasi", icon: Bell, href: "/notifications", badge: unreadCount },
     { id: "peta", label: "Peta Sebaran", icon: MapPin, href: "/dashboard/peta-sebaran" },
     { id: "expired", label: "Izin Expired", icon: AlertCircle, href: "/dashboard/izin-expired" },
     { id: "payments", label: "Pembayaran", icon: CreditCard, href: "/payments" },
     { id: "complaints", label: "Pengaduan", icon: MessageSquare, href: "/complaints" },
+    { id: "survey", label: "Tim Survei", icon: ClipboardList, href: "/survey" },
     { id: "analytics", label: "Analytics", icon: BarChart3, href: "/analytics" },
     { id: "report", label: "Laporan", icon: FileBarChart, href: "/laporan" },
+    { id: "master-data", label: "Master Data", icon: Database, href: "/master-data" },
     { id: "settings", label: "Pengaturan", icon: Settings, href: "/settings" },
   ]
 
@@ -62,9 +65,6 @@ export function AdminSidebar() {
   })
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") {
-      return pathname === "/dashboard"
-    }
     return pathname.startsWith(href)
   }
 

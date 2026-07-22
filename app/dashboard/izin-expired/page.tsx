@@ -27,7 +27,7 @@ export default function IzinExpiredPage() {
     const items = [];
 
     for (const license of licenses) {
-      if (license.status !== "selesai" || !license.berlakuSampai) continue;
+      if (!license.berlakuSampai) continue;
       const validUntil = new Date(license.berlakuSampai);
       validUntil.setHours(0, 0, 0, 0);
       const diffTime = validUntil.getTime() - today.getTime();

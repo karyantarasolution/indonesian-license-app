@@ -297,7 +297,7 @@ export async function exportIzinExpiredHtml(data: License[], filename = "laporan
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const expiredData = data.filter(l => l.status === "selesai" && l.berlakuSampai).map(license => {
+  const expiredData = data.filter(l => l.berlakuSampai).map(license => {
     const validUntil = new Date(license.berlakuSampai!);
     validUntil.setHours(0, 0, 0, 0);
     const diffDays = Math.ceil((validUntil.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
