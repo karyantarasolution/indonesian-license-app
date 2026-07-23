@@ -200,7 +200,6 @@ export default function ReportDashboard() {
         const diffDays = Math.ceil((validUntil.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         return { ...license, diffDays, isExpired: diffDays < 0 };
       })
-      .filter(l => l.diffDays <= 30)
       .sort((a, b) => a.diffDays - b.diffDays);
   }, [filteredLicenses]);
 

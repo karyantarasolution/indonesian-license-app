@@ -373,6 +373,40 @@ export default function AjukanPermohonanPage() {
         console.error("Failed to create payment record", payError);
       }
 
+      // Simpan data jadwal survey jika ada
+      try {
+        const surveyStored = localStorage.getItem("surveySchedules");
+        if (surveyStored) {
+          const surveyList = JSON.parse(surveyStored);
+          if (Array.isArray(surveyList) && surveyList.length > 0) {
+            const latestSurvey = surveyList[surveyList.length - 1];
+            const surveyDataItem = {
+              id: `survey-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              licenseId: newLicense.id,
+              trackingCode: tracking,
+              namaIzin: namaIzin,
+              jenisIzin: jenisIzin,
+              pemohonNama: formData.jenisPemohon === "perorangan" ? formData.namaPemohon : formData.penanggungJawab,
+              lokasi: latestSurvey.lokasi || lokasiIzin,
+              tanggalSurvey: latestSurvey.tanggal || "",
+              waktuSurvey: latestSurvey.waktu || "",
+              petugas: "",
+              status: "dijadwalkan",
+              catatan: "",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            const surveyDataStored = localStorage.getItem("surveyData");
+            const existingSurveyData = surveyDataStored ? JSON.parse(surveyDataStored) : [];
+            existingSurveyData.push(surveyDataItem);
+            localStorage.setItem("surveyData", JSON.stringify(existingSurveyData));
+            localStorage.removeItem("surveySchedules");
+          }
+        }
+      } catch (surveyError) {
+        console.error("Gagal menyimpan jadwal survey:", surveyError);
+      }
+
       // Redirect to success page with tracking code
       window.location.href = `/ajukan-permohonan/sukses?code=${tracking}`;
     } catch (error) {

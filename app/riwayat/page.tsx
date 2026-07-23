@@ -258,8 +258,10 @@ export default function RiwayatPage() {
                                 {getStatusBadge(license.status)}
                               </div>
                               <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                                <div><span className="font-medium">Nama Izin:</span> {license.namaIzin}</div>
                                 <div><span className="font-medium">Jenis:</span> {license.jenisIzin}</div>
                                 <div><span className="font-medium">Sektor:</span> {license.sektor}</div>
+                                <div><span className="font-medium">Pemohon:</span> {license.pemohonNama || "-"}</div>
                                 <div><span className="font-medium">Tracking Code:</span> 
                                   <code className="ml-1 bg-gray-100 px-2 py-0.5 rounded font-mono text-xs">
                                     {license.trackingCode}
