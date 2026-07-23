@@ -232,11 +232,10 @@ export async function exportSertifikatPerizinan(license: License, filename = "se
       <div class="signature">
         <div class="signature-block">
           <p style="margin-bottom: 5px;">Rantau, ${tanggalPenyerahan !== '-' ? tanggalPenyerahan : tanggalTerbit}</p>
-          <p style="margin-bottom: 60px;">Kepala DPMPTSP Kabupaten Tapin</p>
-          <div>
-            <p class="name">_________________________</p>
-            <p class="nip">NIP. _____________________</p>
-          </div>
+          <p style="margin-bottom: 10px;">Kepala DPMPTSP Kabupaten Tapin</p>
+          <img src="/ttd.jpeg" alt="Tanda Tangan" style="width: 120px; height: auto; margin: 0 auto; display: block;" />
+          <p class="name">Hj. Fauziah, S.Sos, M.AP.</p>
+          <p class="nip">NIP. 196601071987032008</p>
         </div>
       </div>
     </div>

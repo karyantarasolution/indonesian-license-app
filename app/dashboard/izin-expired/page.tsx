@@ -28,8 +28,14 @@ export default function IzinExpiredPage() {
 
     for (const license of licenses) {
       if (!license.berlakuSampai) continue;
-      const validUntil = new Date(license.berlakuSampai);
+      let validUntil = new Date(license.berlakuSampai);
       validUntil.setHours(0, 0, 0, 0);
+
+      // Perizinan dengan status "terlambat" berlaku 6 bulan dari berlakuSampai
+      if (license.status === "terlambat") {
+        validUntil.setMonth(validUntil.getMonth() + 6);
+      }
+
       const diffTime = validUntil.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 

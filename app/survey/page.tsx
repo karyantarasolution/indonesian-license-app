@@ -71,7 +71,7 @@ function SurveyTeamContent() {
   // Generate surveys from licenses that are in "proses" or "rekomendasi" status
   const generateSurveysFromLicenses = () => {
     const eligibleLicenses = licenses.filter(
-      l => (l.status === "proses" || l.status === "rekomendasi" || l.status === "dikirim") && l.lokasiIzin
+      l => (l.status === "proses" || l.status === "rekomendasi" || l.status === "dikirim" || l.status === "terlambat") && l.lokasiIzin
     )
     
     const existingIds = new Set(surveys.map(s => s.licenseId))

@@ -1268,6 +1268,15 @@ export function LicenseManagement() {
   const handleDeleteLicense = async (id: string) => {
     try {
       await deleteLicense(id);
+      // Hapus juga survey terkait dari localStorage
+      const storedSurveys = localStorage.getItem("surveyData");
+      if (storedSurveys) {
+        try {
+          const surveys = JSON.parse(storedSurveys);
+          const updatedSurveys = surveys.filter((s: any) => s.licenseId !== id);
+          localStorage.setItem("surveyData", JSON.stringify(updatedSurveys));
+        } catch {}
+      }
     } catch (error) {
       console.error("Error deleting license:", error);
     }
